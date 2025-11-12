@@ -8,6 +8,7 @@ import 'package:hack_the_future_starter/features/chat/services/agent_log_service
 import 'package:hack_the_future_starter/features/chat/services/cancellable_content_generator.dart';
 import 'package:hack_the_future_starter/features/chat/services/query_history_service.dart';
 import 'package:hack_the_future_starter/features/chat/services/favorites_service.dart';
+import 'package:hack_the_future_starter/features/chat/services/screenshot_service.dart';
 
 class ChatViewModel extends ChangeNotifier {
   ChatViewModel({
@@ -15,15 +16,18 @@ class ChatViewModel extends ChangeNotifier {
     AgentLogService? agentLogService,
     QueryHistoryService? queryHistoryService,
     FavoritesService? favoritesService,
+    ScreenshotService? screenshotService,
   })  : _service = service ?? GenUiService(),
         agentLogService = agentLogService ?? AgentLogService(),
         queryHistoryService = queryHistoryService ?? QueryHistoryService(),
-        favoritesService = favoritesService ?? FavoritesService();
+        favoritesService = favoritesService ?? FavoritesService(),
+        screenshotService = screenshotService ?? ScreenshotService();
 
   final GenUiService _service;
   final AgentLogService agentLogService;
   final QueryHistoryService queryHistoryService;
   final FavoritesService favoritesService;
+  final ScreenshotService screenshotService;
 
   late final Catalog _catalog;
   late final GenUiManager _manager;

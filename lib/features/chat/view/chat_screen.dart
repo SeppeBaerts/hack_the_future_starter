@@ -403,17 +403,59 @@ class _ChatScreenState extends State<ChatScreen> {
 }
 
 class _MessageView extends StatelessWidget {
-  const _MessageView({
+  _MessageView({
     required this.model,
     required this.host,
     required this.l10n,
     required this.viewModel,
-  });
+  }) : _surfaceKey = GlobalKey();
 
   final ChatMessageModel model;
   final GenUiHost host;
   final AppLocalizations l10n;
   final ChatViewModel viewModel;
+  final GlobalKey _surfaceKey;
+
+  Future<void> _captureAndShare(BuildContext context) async {
+    try {
+      final bytes = await viewModel.screenshotService.captureWidget(_surfaceKey);
+      
+      if (bytes != null) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Screenshot captured (${(bytes.length / 1024).toStringAsFixed(1)} KB)'),
+              action: SnackBarAction(
+                label: 'OK',
+                onPressed: () {},
+              ),
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+        // In a real implementation with share_plus package:
+        // await Share.shareXFiles([XFile.fromData(bytes, name: 'ocean_chart.png', mimeType: 'image/png')]);
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to capture screenshot'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -433,7 +475,10 @@ class _MessageView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        GenUiSurface(host: host, surfaceId: surfaceId),
+        RepaintBoundary(
+          key: _surfaceKey,
+          child: GenUiSurface(host: host, surfaceId: surfaceId),
+        ),
         // Action buttons for AI responses
         if (!model.isUser)
           Padding(
@@ -441,16 +486,9 @@ class _MessageView extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                // Share button - for now, show a simple message
+                // Share button
                 TextButton.icon(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Screenshot feature coming soon!'),
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  },
+                  onPressed: () => _captureAndShare(context),
                   icon: const Icon(Icons.share, size: 16),
                   label: const Text('Share', style: TextStyle(fontSize: 12)),
                 ),
