@@ -827,3 +827,528 @@ final dataTrendCardItem = CatalogItem(
     );
   },
 );
+
+/// A custom gauge widget for displaying ocean metrics with a circular gauge
+class OceanGaugeCard extends StatelessWidget {
+  const OceanGaugeCard({
+    required this.title,
+    required this.value,
+    required this.maxValue,
+    required this.unit,
+    this.minValue = 0,
+    this.color,
+    super.key,
+  });
+
+  final String title;
+  final double value;
+  final double minValue;
+  final double maxValue;
+  final String unit;
+  final Color? color;
+
+  Color _getGaugeColor() {
+    if (color != null) return color!;
+    
+    // Default color based on percentage
+    final percentage = (value - minValue) / (maxValue - minValue);
+    if (percentage < 0.3) return Colors.green.shade600;
+    if (percentage < 0.7) return Colors.orange.shade600;
+    return Colors.red.shade600;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final gaugeColor = _getGaugeColor();
+    final percentage = ((value - minValue) / (maxValue - minValue)).clamp(0.0, 1.0);
+    
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              gaugeColor.withOpacity(0.1),
+              gaugeColor.withOpacity(0.05),
+            ],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade800,
+                ),
+              ),
+              const SizedBox(height: 20),
+              // Circular gauge
+              SizedBox(
+                width: 150,
+                height: 150,
+                child: CustomPaint(
+                  painter: _GaugePainter(
+                    percentage: percentage,
+                    color: gaugeColor,
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          value.toStringAsFixed(1),
+                          style: TextStyle(
+                            fontSize: 36,
+                            fontWeight: FontWeight.bold,
+                            color: gaugeColor,
+                          ),
+                        ),
+                        Text(
+                          unit,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildRangeLabel('Min', minValue, unit, Colors.grey.shade600),
+                  _buildRangeLabel('Max', maxValue, unit, Colors.grey.shade600),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRangeLabel(String label, double value, String unit, Color color) {
+    return Column(
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            color: color,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '${value.toStringAsFixed(1)}$unit',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Custom painter for circular gauge
+class _GaugePainter extends CustomPainter {
+  _GaugePainter({required this.percentage, required this.color});
+
+  final double percentage;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 10;
+    
+    // Background arc
+    final backgroundPaint = Paint()
+      ..color = Colors.grey.shade200
+      ..strokeWidth = 12
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    
+    canvas.drawCircle(center, radius, backgroundPaint);
+    
+    // Foreground arc (progress)
+    final foregroundPaint = Paint()
+      ..color = color
+      ..strokeWidth = 12
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    
+    const startAngle = -3.14159 / 2; // Start from top
+    final sweepAngle = 2 * 3.14159 * percentage;
+    
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      startAngle,
+      sweepAngle,
+      false,
+      foregroundPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_GaugePainter oldDelegate) {
+    return oldDelegate.percentage != percentage || oldDelegate.color != color;
+  }
+}
+
+// Schema for OceanGaugeCard
+final _oceanGaugeSchema = S.object(
+  properties: {
+    'title': S.string(
+      description: 'Title of the gauge metric',
+    ),
+    'value': S.number(
+      description: 'Current value',
+    ),
+    'minValue': S.number(
+      description: 'Minimum value for the gauge range',
+    ),
+    'maxValue': S.number(
+      description: 'Maximum value for the gauge range',
+    ),
+    'unit': S.string(
+      description: 'Unit of measurement',
+    ),
+  },
+  required: ['title', 'value', 'maxValue', 'unit'],
+);
+
+extension type _OceanGaugeData.fromMap(Map<String, Object?> _json) {
+  factory _OceanGaugeData({
+    required String title,
+    required double value,
+    double? minValue,
+    required double maxValue,
+    required String unit,
+  }) =>
+      _OceanGaugeData.fromMap({
+        'title': title,
+        'value': value,
+        if (minValue != null) 'minValue': minValue,
+        'maxValue': maxValue,
+        'unit': unit,
+      });
+
+  String get title => _json['title'] as String;
+  double get value => (_json['value'] as num).toDouble();
+  double get minValue => (_json['minValue'] as num?)?.toDouble() ?? 0;
+  double get maxValue => (_json['maxValue'] as num).toDouble();
+  String get unit => _json['unit'] as String;
+}
+
+final oceanGaugeCardItem = CatalogItem(
+  name: 'OceanGaugeCard',
+  dataSchema: _oceanGaugeSchema,
+  widgetBuilder: (context) {
+    final data = _OceanGaugeData.fromMap(
+      context.data as Map<String, Object?>,
+    );
+    return OceanGaugeCard(
+      title: data.title,
+      value: data.value,
+      minValue: data.minValue,
+      maxValue: data.maxValue,
+      unit: data.unit,
+    );
+  },
+);
+
+/// A custom heatmap widget for displaying ocean temperature/salinity data
+class OceanHeatmapCard extends StatelessWidget {
+  const OceanHeatmapCard({
+    required this.title,
+    required this.gridData,
+    required this.unit,
+    super.key,
+  });
+
+  final String title;
+  final List<Map<String, dynamic>> gridData;
+  final String unit;
+
+  Color _getHeatmapColor(double value, double min, double max) {
+    final range = max - min;
+    if (range == 0) return Colors.blue.shade300;
+    
+    final normalized = (value - min) / range;
+    
+    if (normalized < 0.2) return Colors.blue.shade700;
+    if (normalized < 0.4) return Colors.cyan.shade500;
+    if (normalized < 0.6) return Colors.yellow.shade600;
+    if (normalized < 0.8) return Colors.orange.shade600;
+    return Colors.red.shade600;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (gridData.isEmpty) {
+      return Card(
+        margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Text('No data available'),
+        ),
+      );
+    }
+
+    // Extract values and calculate min/max
+    final values = gridData
+        .map((d) => (d['value'] as num).toDouble())
+        .toList();
+    final minValue = values.reduce((a, b) => a < b ? a : b);
+    final maxValue = values.reduce((a, b) => a > b ? a : b);
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.deepPurple.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.grid_on,
+                    color: Colors.deepPurple.shade700,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade800,
+                        ),
+                      ),
+                      Text(
+                        'Spatial distribution',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // Heatmap grid - show a simple grid representation
+            _buildHeatmapGrid(gridData, minValue, maxValue),
+            const SizedBox(height: 12),
+            // Legend
+            _buildLegend(minValue, maxValue, unit),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeatmapGrid(List<Map<String, dynamic>> data, double min, double max) {
+    // Create a simple grid layout (4x4 or based on data length)
+    final gridSize = (data.length.clamp(4, 16)).toInt();
+    final cellsPerRow = 4;
+    final rows = (gridSize / cellsPerRow).ceil();
+
+    return Column(
+      children: List.generate(rows.clamp(1, 4), (rowIndex) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(cellsPerRow, (colIndex) {
+              final dataIndex = rowIndex * cellsPerRow + colIndex;
+              if (dataIndex >= data.length) {
+                return Expanded(
+                  child: Container(
+                    height: 50,
+                    margin: const EdgeInsets.all(2),
+                  ),
+                );
+              }
+              
+              final cellData = data[dataIndex];
+              final value = (cellData['value'] as num).toDouble();
+              final region = cellData['region'] as String? ?? '';
+              
+              return Expanded(
+                child: Container(
+                  height: 50,
+                  margin: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: _getHeatmapColor(value, min, max),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (region.isNotEmpty)
+                        Text(
+                          region.length > 4 ? region.substring(0, 4) : region,
+                          style: const TextStyle(
+                            fontSize: 8,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      Text(
+                        value.toStringAsFixed(1),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ),
+        );
+      }),
+    );
+  }
+
+  Widget _buildLegend(double min, double max, String unit) {
+    return Row(
+      children: [
+        Text(
+          'Low',
+          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Container(
+            height: 12,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(6),
+              gradient: LinearGradient(
+                colors: [
+                  Colors.blue.shade700,
+                  Colors.cyan.shade500,
+                  Colors.yellow.shade600,
+                  Colors.orange.shade600,
+                  Colors.red.shade600,
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          'High',
+          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          '${min.toStringAsFixed(1)} - ${max.toStringAsFixed(1)}$unit',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: Colors.grey.shade700,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// Schema for OceanHeatmapCard
+final _oceanHeatmapSchema = S.object(
+  properties: {
+    'title': S.string(
+      description: 'Title of the heatmap',
+    ),
+    'gridData': S.list(
+      description: 'Grid data points with region and value',
+      items: S.object(
+        properties: {
+          'region': S.string(
+            description: 'Region identifier or name',
+          ),
+          'value': S.number(
+            description: 'The numeric value for this grid cell',
+          ),
+        },
+        required: ['value'],
+      ),
+    ),
+    'unit': S.string(
+      description: 'Unit of measurement',
+    ),
+  },
+  required: ['title', 'gridData', 'unit'],
+);
+
+extension type _OceanHeatmapData.fromMap(Map<String, Object?> _json) {
+  factory _OceanHeatmapData({
+    required String title,
+    required List<Map<String, dynamic>> gridData,
+    required String unit,
+  }) =>
+      _OceanHeatmapData.fromMap({
+        'title': title,
+        'gridData': gridData,
+        'unit': unit,
+      });
+
+  String get title => _json['title'] as String;
+  List<Map<String, dynamic>> get gridData =>
+      (_json['gridData'] as List).cast<Map<String, dynamic>>();
+  String get unit => _json['unit'] as String;
+}
+
+final oceanHeatmapCardItem = CatalogItem(
+  name: 'OceanHeatmapCard',
+  dataSchema: _oceanHeatmapSchema,
+  widgetBuilder: (context) {
+    final data = _OceanHeatmapData.fromMap(
+      context.data as Map<String, Object?>,
+    );
+    return OceanHeatmapCard(
+      title: data.title,
+      gridData: data.gridData,
+      unit: data.unit,
+    );
+  },
+);
