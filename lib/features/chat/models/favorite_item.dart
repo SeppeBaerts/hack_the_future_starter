@@ -6,7 +6,7 @@ class FavoriteItem {
     required this.id,
     required this.query,
     this.surfaceId,
-    this.timestamp,
+    DateTime? timestamp,
   }) : timestamp = timestamp ?? DateTime.now();
 
   final String id;

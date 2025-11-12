@@ -514,7 +514,7 @@ class _MessageView extends StatelessWidget {
                       onPressed: associatedQuery != null
                           ? () {
                               viewModel.toggleFavorite(
-                                associatedQuery,
+                                associatedQuery!,
                                 surfaceId: surfaceId,
                               );
                             }
