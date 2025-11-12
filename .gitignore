@@ -45,5 +45,8 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-/lib/firebase_options.dart
+# Firebase configuration (real credentials)
+# Note: A mock firebase_options.dart is committed for development
+# Real firebase_options.dart with credentials should not be committed
+# /lib/firebase_options.dart
 firebase.json

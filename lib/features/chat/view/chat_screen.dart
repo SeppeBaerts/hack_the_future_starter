@@ -53,6 +53,99 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
+  void _showFavoritesDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.favorite, color: Colors.pink),
+            SizedBox(width: 8),
+            Text('Favorites'),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: AnimatedBuilder(
+            animation: _viewModel.favoritesService,
+            builder: (context, _) {
+              final favorites = _viewModel.favoritesService.favorites;
+              
+              if (favorites.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.all(20.0),
+                  child: Text(
+                    'No favorites yet.\nMark interesting queries as favorite!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                );
+              }
+              
+              return ListView.builder(
+                shrinkWrap: true,
+                itemCount: favorites.length,
+                itemBuilder: (context, index) {
+                  final favorite = favorites[index];
+                  return Card(
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    child: ListTile(
+                      leading: const Icon(Icons.favorite, color: Colors.pink),
+                      title: Text(
+                        favorite.query,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      subtitle: Text(
+                        _formatTimestamp(favorite.timestamp),
+                        style: const TextStyle(fontSize: 11),
+                      ),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete_outline),
+                        onPressed: () {
+                          _viewModel.favoritesService.removeFavorite(favorite.id);
+                        },
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _textController.text = favorite.query;
+                      },
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              if (_viewModel.favoritesService.favorites.isNotEmpty) {
+                _viewModel.favoritesService.clear();
+              }
+            },
+            child: const Text('Clear All'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatTimestamp(DateTime timestamp) {
+    final now = DateTime.now();
+    final diff = now.difference(timestamp);
+    
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inHours < 1) return '${diff.inMinutes}m ago';
+    if (diff.inDays < 1) return '${diff.inHours}h ago';
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    return '${timestamp.day}/${timestamp.month}/${timestamp.year}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -60,6 +153,13 @@ class _ChatScreenState extends State<ChatScreen> {
       appBar: AppBar(
         title: Text(l10n.appBarTitle),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.favorite),
+            tooltip: 'Favorites',
+            onPressed: () {
+              _showFavoritesDialog(context);
+            },
+          ),
           IconButton(
             icon: Icon(_showAgentLog ? Icons.visibility_off : Icons.visibility),
             tooltip: _showAgentLog ? 'Hide Agent Log' : 'Show Agent Log',
@@ -168,8 +268,11 @@ class _ChatScreenState extends State<ChatScreen> {
                     itemCount: _viewModel.messages.length,
                     itemBuilder: (_, i) {
                       final m = _viewModel.messages[i];
-                      return ListTile(
-                        title: _MessageView(m, _viewModel.host, l10n),
+                      return _MessageView(
+                        model: m,
+                        host: _viewModel.host,
+                        l10n: l10n,
+                        viewModel: _viewModel,
                       );
                     },
                   ),
@@ -186,14 +289,18 @@ class _ChatScreenState extends State<ChatScreen> {
                           const CircularProgressIndicator(),
                           const SizedBox(width: 16),
                           ElevatedButton.icon(
-                            onPressed: () {
-                              _viewModel.abort();
-                            },
+                            onPressed: _viewModel.isAborting
+                                ? null
+                                : () {
+                                    _viewModel.abort();
+                                  },
                             icon: const Icon(Icons.stop),
-                            label: const Text('Stop'),
+                            label: Text(_viewModel.isAborting ? 'Stopping...' : 'Stop'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.red,
                               foregroundColor: Colors.white,
+                              disabledBackgroundColor: Colors.grey,
+                              disabledForegroundColor: Colors.white70,
                             ),
                           ),
                         ],
@@ -296,11 +403,59 @@ class _ChatScreenState extends State<ChatScreen> {
 }
 
 class _MessageView extends StatelessWidget {
-  const _MessageView(this.model, this.host, this.l10n);
+  _MessageView({
+    required this.model,
+    required this.host,
+    required this.l10n,
+    required this.viewModel,
+  }) : _surfaceKey = GlobalKey();
 
   final ChatMessageModel model;
   final GenUiHost host;
   final AppLocalizations l10n;
+  final ChatViewModel viewModel;
+  final GlobalKey _surfaceKey;
+
+  Future<void> _captureAndShare(BuildContext context) async {
+    try {
+      final bytes = await viewModel.screenshotService.captureWidget(_surfaceKey);
+      
+      if (bytes != null) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Screenshot captured (${(bytes.length / 1024).toStringAsFixed(1)} KB)'),
+              action: SnackBarAction(
+                label: 'OK',
+                onPressed: () {},
+              ),
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+        // In a real implementation with share_plus package:
+        // await Share.shareXFiles([XFile.fromData(bytes, name: 'ocean_chart.png', mimeType: 'image/png')]);
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to capture screenshot'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -311,9 +466,75 @@ class _MessageView extends StatelessWidget {
           ? l10n.labelError
           : (model.isUser ? l10n.labelYou : l10n.labelAI);
       final content = model.text ?? '';
-      return Text('$label: $content');
+      return ListTile(
+        title: Text('$label: $content'),
+      );
     }
 
-    return GenUiSurface(host: host, surfaceId: surfaceId);
+    // For AI responses with surfaces, add action buttons
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        RepaintBoundary(
+          key: _surfaceKey,
+          child: GenUiSurface(host: host, surfaceId: surfaceId),
+        ),
+        // Action buttons for AI responses
+        if (!model.isUser)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                // Share button
+                TextButton.icon(
+                  onPressed: () => _captureAndShare(context),
+                  icon: const Icon(Icons.share, size: 16),
+                  label: const Text('Share', style: TextStyle(fontSize: 12)),
+                ),
+                const SizedBox(width: 8),
+                // Favorite button
+                AnimatedBuilder(
+                  animation: viewModel.favoritesService,
+                  builder: (context, _) {
+                    // Try to get associated query from previous user message
+                    final messageIndex = viewModel.messages.indexOf(model);
+                    String? associatedQuery;
+                    if (messageIndex > 0) {
+                      final prevMessage = viewModel.messages[messageIndex - 1];
+                      if (prevMessage.isUser) {
+                        associatedQuery = prevMessage.text;
+                      }
+                    }
+                    
+                    final isFavorited = associatedQuery != null &&
+                        viewModel.favoritesService.isFavorited(associatedQuery);
+                    
+                    return TextButton.icon(
+                      onPressed: associatedQuery != null
+                          ? () {
+                              viewModel.toggleFavorite(
+                                associatedQuery!,
+                                surfaceId: surfaceId,
+                              );
+                            }
+                          : null,
+                      icon: Icon(
+                        isFavorited ? Icons.favorite : Icons.favorite_border,
+                        size: 16,
+                        color: isFavorited ? Colors.pink : null,
+                      ),
+                      label: Text(
+                        isFavorited ? 'Favorited' : 'Favorite',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
   }
 }

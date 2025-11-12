@@ -14,14 +14,18 @@ Referentie: [Unlockd student briefing (PDF)](https://unlockd.be/wp-content/uploa
   - `getOceanSalinity`: Zoutgehalte tijdreeksen
   - `getWaveData`: Golfmetingen
   - `getCurrentConditions`: Huidige oceaancondities
-- ✅ Vier custom ocean widgets:
+- ✅ Zes custom ocean widgets:
   - OceanTemperatureCard
   - WaveInfoCard
   - SalinityCard
   - DataTrendCard
-- ✅ Stop knop tijdens AI processing
+  - **OceanGaugeCard** (nieuw: circulaire gauge voor metrics)
+  - **OceanHeatmapCard** (nieuw: heatmap voor spatiale distributie)
+- ✅ Stop knop tijdens AI processing (met meervoudig klik preventie)
 - ✅ Mock data fallback
 - ✅ Transparante agent logging
+- ✅ **Favorites feature**: Markeer interessante resultaten als favoriet
+- ✅ **Query history**: Snelle toegang tot recente queries
 
 ### Voorbeeld Vragen
 
@@ -30,6 +34,26 @@ Probeer deze vragen in de app:
 - "Toon me de zoutgehalte trends in de Atlantische Oceaan"
 - "Waar zijn de hoogste golven gemeten?"
 - "Wat zijn de huidige condities in de Middellandse Zee?"
+
+### Nieuwe Features
+
+#### Favorites
+- Klik op het ❤️ icoon in de app bar om je favorieten te bekijken
+- Markeer interessante resultaten als favoriet via de "Favorite" knop onder AI responses
+- Klik op een favoriet om de query opnieuw te gebruiken
+
+#### Query History
+- Recente queries verschijnen als chips boven het invoerveld
+- Klik op een chip om de query te hergebruiken
+
+#### Component Catalog
+De app heeft nu 6 ocean-specifieke widgets:
+- **OceanTemperatureCard**: Temperatuur weergave met thermometer icoon
+- **WaveInfoCard**: Golf informatie met hoogte, periode en richting
+- **SalinityCard**: Zoutgehalte in PSU
+- **DataTrendCard**: Min/avg/max statistieken voor tijdreeksen
+- **OceanGaugeCard**: Circulaire gauge voor metrics (bijv. druk, hoogte)
+- **OceanHeatmapCard**: Heatmap voor spatiale distributie van data
 
 ## 📋 Wat is al gedaan
 

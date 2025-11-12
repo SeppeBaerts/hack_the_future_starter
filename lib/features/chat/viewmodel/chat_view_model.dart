@@ -7,19 +7,27 @@ import 'package:hack_the_future_starter/features/chat/services/genui_service.dar
 import 'package:hack_the_future_starter/features/chat/services/agent_log_service.dart';
 import 'package:hack_the_future_starter/features/chat/services/cancellable_content_generator.dart';
 import 'package:hack_the_future_starter/features/chat/services/query_history_service.dart';
+import 'package:hack_the_future_starter/features/chat/services/favorites_service.dart';
+import 'package:hack_the_future_starter/features/chat/services/screenshot_service.dart';
 
 class ChatViewModel extends ChangeNotifier {
   ChatViewModel({
     GenUiService? service,
     AgentLogService? agentLogService,
     QueryHistoryService? queryHistoryService,
+    FavoritesService? favoritesService,
+    ScreenshotService? screenshotService,
   })  : _service = service ?? GenUiService(),
         agentLogService = agentLogService ?? AgentLogService(),
-        queryHistoryService = queryHistoryService ?? QueryHistoryService();
+        queryHistoryService = queryHistoryService ?? QueryHistoryService(),
+        favoritesService = favoritesService ?? FavoritesService(),
+        screenshotService = screenshotService ?? ScreenshotService();
 
   final GenUiService _service;
   final AgentLogService agentLogService;
   final QueryHistoryService queryHistoryService;
+  final FavoritesService favoritesService;
+  final ScreenshotService screenshotService;
 
   late final Catalog _catalog;
   late final GenUiManager _manager;
@@ -31,8 +39,11 @@ class ChatViewModel extends ChangeNotifier {
   ValueListenable<bool> get isProcessing => _conversation.isProcessing;
 
   final List<ChatMessageModel> _messages = [];
+  bool _isAborting = false;
 
   List<ChatMessageModel> get messages => List.unmodifiable(_messages);
+  
+  bool get isAborting => _isAborting;
 
   void init() {
     _catalog = _service.createCatalog();
@@ -73,6 +84,9 @@ class ChatViewModel extends ChangeNotifier {
   Future<void> send(String text) async {
     if (text.trim().isEmpty) return;
     
+    // Reset abort flag for new request
+    _isAborting = false;
+    
     // Add to query history
     queryHistoryService.addQuery(text);
     notifyListeners(); // Notify to update query history UI
@@ -90,6 +104,11 @@ class ChatViewModel extends ChangeNotifier {
   }
 
   void abort() {
+    // Prevent multiple abort calls
+    if (_isAborting) return;
+    
+    _isAborting = true;
+    
     agentLogService.addEntry(
       AgentStep.act,
       'User requested to stop the agent',
@@ -97,6 +116,18 @@ class ChatViewModel extends ChangeNotifier {
     
     // Cancel the current request
     _cancellableGenerator.cancel();
+  }
+
+  void toggleFavorite(String query, {String? surfaceId}) {
+    if (favoritesService.isFavorited(query)) {
+      final favorite = favoritesService.getFavoriteByQuery(query);
+      if (favorite != null) {
+        favoritesService.removeFavorite(favorite.id);
+      }
+    } else {
+      favoritesService.addFavorite(query, surfaceId: surfaceId);
+    }
+    notifyListeners();
   }
 
   void disposeConversation() {
