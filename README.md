@@ -4,16 +4,47 @@ Deze handleiding is toegespitst op dit starterproject. Een aantal stappen zijn a
 
 Referentie: [Unlockd student briefing (PDF)](https://unlockd.be/wp-content/uploads/2025/10/student-briefing.pdf)
 
-### Wat is al gedaan
+## ✅ Wat is al geïmplementeerd
+
+### MVP Features
+- ✅ Chat interface voor oceaan-vragen
+- ✅ Agent Activity Log (Perceive → Plan → Act → Reflect → Present)
+- ✅ Vier MCP-achtige tools voor oceaandata:
+  - `getOceanTemperature`: Temperatuur tijdreeksen
+  - `getOceanSalinity`: Zoutgehalte tijdreeksen
+  - `getWaveData`: Golfmetingen
+  - `getCurrentConditions`: Huidige oceaancondities
+- ✅ Vier custom ocean widgets:
+  - OceanTemperatureCard
+  - WaveInfoCard
+  - SalinityCard
+  - DataTrendCard
+- ✅ Stop knop tijdens AI processing
+- ✅ Mock data fallback
+- ✅ Transparante agent logging
+
+### Voorbeeld Vragen
+
+Probeer deze vragen in de app:
+- "Wat is de oceaantemperatuur in de Noordzee de afgelopen maand?"
+- "Toon me de zoutgehalte trends in de Atlantische Oceaan"
+- "Waar zijn de hoogste golven gemeten?"
+- "Wat zijn de huidige condities in de Middellandse Zee?"
+
+## 📋 Wat is al gedaan
+
 - Flutter/Dart project staat klaar.
 - Dependencies in `pubspec.yaml` bevatten al:
     - `firebase_core`
     - `flutter_genui_firebase_ai` (via Git)
     - `logging`
+- **Agent Loop implementatie** met transparante logging
+- **Custom ocean widgets** voor data visualisatie
+- **MCP-achtige tools** voor oceaandata (met mock data)
 
 Je hoeft deze packages dus niet meer toe te voegen.
 
-### Nog te doen (stappen)
+## 🚀 Nog te doen (stappen)
 1) Controleer versies
     - Vereist: Flutter ≥ 3.35.7 en Dart ≥ 3.9 (`flutter --version`).
 
@@ -85,4 +116,23 @@ flutter run
 - Gebruik de core catalog voor snelle iteratie; breid later uit.
 - Zet logging op `Level.ALL` tijdens ontwikkeling.
 
+## 📚 Meer Informatie
+
+Zie [IMPLEMENTATION.md](IMPLEMENTATION.md) voor:
+- Gedetailleerde architectuur uitleg
+- Code structuur overzicht
+- Hoe je nieuwe tools en widgets toevoegt
+- Troubleshooting tips
+- Uitleg van het Agent Loop patroon
+
+## 🎯 Success Criteria
+
+Jullie app is succesvol als:  
+- ✅ Gebruiker kan oceaanvragen stellen  
+- ✅ Gemini LLM is geïntegreerd en werkt  
+- ✅ GenUI toont data visueel met jullie componenten  
+- ✅ Run-log toont transparant wat er gebeurt  
+- ✅ App werkt ook met mock data (fallback)
+
+Veel succes met jullie oceaan-exploratie!
 
