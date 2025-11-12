@@ -1,5 +1,5 @@
-import 'package:flutter_genui/flutter_genui.dart';
-import 'package:flutter_genui_firebase_ai/flutter_genui_firebase_ai.dart';
+import 'package:genui/genui.dart';
+import 'package:genui_firebase_ai/genui_firebase_ai.dart';
 
 class GenUiService {
   Catalog createCatalog() => CoreCatalogItems.asCatalog();

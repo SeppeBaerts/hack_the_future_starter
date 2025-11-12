@@ -1,6 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:genui_firebase_ai/genui_firebase_ai.dart';
+import 'package:genui/genui.dart';
 import 'package:hack_the_future_starter/features/chat/view/chat_screen.dart';
 import 'package:hack_the_future_starter/l10n/app_localizations.dart';
 import 'package:logging/logging.dart';
