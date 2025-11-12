@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:genui/genui.dart';
 import 'package:hack_the_future_starter/features/chat/view/chat_screen.dart';
+import 'package:hack_the_future_starter/features/chat/services/theme_provider.dart';
 import 'package:hack_the_future_starter/l10n/app_localizations.dart';
 import 'package:logging/logging.dart';
 
@@ -18,17 +19,31 @@ void main() async {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
   @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  final ThemeProvider _themeProvider = ThemeProvider();
+
+  @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: const ChatScreen(),
+    return AnimatedBuilder(
+      animation: _themeProvider,
+      builder: (context, _) {
+        return MaterialApp(
+          onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          theme: ThemeProvider.lightTheme,
+          darkTheme: ThemeProvider.darkTheme,
+          themeMode: _themeProvider.themeMode,
+          home: ChatScreen(themeProvider: _themeProvider),
+        );
+      },
     );
   }
 }

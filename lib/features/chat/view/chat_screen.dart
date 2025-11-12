@@ -1,13 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:genui/genui.dart';
+import 'package:hack_the_future_starter/features/chat/services/theme_provider.dart';
 import 'package:hack_the_future_starter/l10n/app_localizations.dart';
 
 import '../models/chat_message.dart';
 import '../viewmodel/chat_view_model.dart';
 import '../widgets/agent_log_panel.dart';
+import '../widgets/query_history_panel.dart';
+import '../widgets/favorites_panel.dart';
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key});
+  const ChatScreen({
+    required this.themeProvider,
+    super.key,
+  });
+
+  final ThemeProvider themeProvider;
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -18,6 +26,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final _scrollController = ScrollController();
   late final ChatViewModel _viewModel;
   bool _showAgentLog = true;
+  String _currentQuery = '';
 
   @override
   void initState() {
@@ -36,9 +45,15 @@ class _ChatScreenState extends State<ChatScreen> {
   void _send() {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
+    _currentQuery = text;
     _textController.clear();
     _viewModel.send(text);
     _scrollToBottom();
+  }
+
+  void _sendQuery(String query) {
+    _textController.text = query;
+    _send();
   }
 
   void _scrollToBottom() {
@@ -53,6 +68,136 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
+  void _showFavoritesDrawer() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SizedBox(
+        height: MediaQuery.of(context).size.height * 0.6,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  const Icon(Icons.star, color: Colors.amber),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Favorite Queries',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(),
+            Expanded(
+              child: FavoritesPanel(
+                favoritesService: _viewModel.favoritesService,
+                onQuerySelected: (query) {
+                  Navigator.of(context).pop();
+                  _sendQuery(query);
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _exportHistory() {
+    final history = _viewModel.queryHistoryService.history;
+    if (history.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No query history to export'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    final csvData = history.map((item) => {
+      'query': item.query,
+      'timestamp': item.timestamp.toIso8601String(),
+    }).toList();
+
+    _viewModel.shareService.showShareDialog(
+      context,
+      jsonData: {'queries': csvData},
+      csvData: csvData,
+    );
+  }
+
+  void _exportAgentLogs() {
+    final logs = _viewModel.agentLogService.entries;
+    if (logs.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No agent logs to export'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    final csvData = logs.map((entry) => {
+      'step': entry.stepName,
+      'message': entry.message,
+      'timestamp': entry.timestamp.toIso8601String(),
+    }).toList();
+
+    _viewModel.shareService.showShareDialog(
+      context,
+      jsonData: {'logs': csvData},
+      csvData: csvData,
+    );
+  }
+
+  void _clearAll() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear All Data'),
+        content: const Text(
+          'This will clear query history, favorites, and agent logs. '
+          'Chat messages will remain. Continue?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              _viewModel.queryHistoryService.clear();
+              _viewModel.favoritesService.clear();
+              _viewModel.agentLogService.clear();
+              Navigator.of(context).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('All data cleared'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('Clear'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -60,6 +205,98 @@ class _ChatScreenState extends State<ChatScreen> {
       appBar: AppBar(
         title: Text(l10n.appBarTitle),
         actions: [
+          // Theme toggle
+          IconButton(
+            icon: Icon(
+              widget.themeProvider.isDarkMode
+                  ? Icons.light_mode
+                  : Icons.dark_mode,
+            ),
+            tooltip: widget.themeProvider.isDarkMode
+                ? 'Switch to Light Mode'
+                : 'Switch to Dark Mode',
+            onPressed: () {
+              widget.themeProvider.toggleTheme();
+            },
+          ),
+          // Favorite current query
+          if (_currentQuery.isNotEmpty)
+            AnimatedBuilder(
+              animation: _viewModel.favoritesService,
+              builder: (context, _) {
+                final isFavorite =
+                    _viewModel.favoritesService.isFavorite(_currentQuery);
+                return IconButton(
+                  icon: Icon(
+                    isFavorite ? Icons.star : Icons.star_border,
+                    color: isFavorite ? Colors.amber : null,
+                  ),
+                  tooltip: isFavorite
+                      ? 'Remove from favorites'
+                      : 'Add to favorites',
+                  onPressed: () {
+                    _viewModel.favoritesService.toggleFavorite(_currentQuery);
+                  },
+                );
+              },
+            ),
+          // Show favorites drawer
+          IconButton(
+            icon: const Icon(Icons.favorite),
+            tooltip: 'View Favorites',
+            onPressed: _showFavoritesDrawer,
+          ),
+          // More options menu
+          PopupMenuButton<String>(
+            tooltip: 'More options',
+            icon: const Icon(Icons.more_vert),
+            onSelected: (value) {
+              switch (value) {
+                case 'export_history':
+                  _exportHistory();
+                  break;
+                case 'export_logs':
+                  _exportAgentLogs();
+                  break;
+                case 'clear_all':
+                  _clearAll();
+                  break;
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'export_history',
+                child: Row(
+                  children: [
+                    Icon(Icons.download),
+                    SizedBox(width: 8),
+                    Text('Export Query History'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'export_logs',
+                child: Row(
+                  children: [
+                    Icon(Icons.file_download),
+                    SizedBox(width: 8),
+                    Text('Export Agent Logs'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'clear_all',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_sweep),
+                    SizedBox(width: 8),
+                    Text('Clear All Data'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          // Agent log toggle
           IconButton(
             icon: Icon(_showAgentLog ? Icons.visibility_off : Icons.visibility),
             tooltip: _showAgentLog ? 'Hide Agent Log' : 'Show Agent Log',
@@ -77,13 +314,25 @@ class _ChatScreenState extends State<ChatScreen> {
           builder: (context, _) {
             return Column(
               children: [
+                // Query History Panel
+                QueryHistoryPanel(
+                  historyService: _viewModel.queryHistoryService,
+                  onQuerySelected: _sendQuery,
+                ),
+                // Agent Log Panel
                 if (_showAgentLog)
-                  Container(
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
                     height: 200,
                     decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      border: const Border(
-                        bottom: BorderSide(color: Colors.grey, width: 1),
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.grey[900]
+                          : Colors.grey[100],
+                      border: Border(
+                        bottom: BorderSide(
+                          color: Theme.of(context).dividerColor,
+                          width: 1,
+                        ),
                       ),
                     ),
                     child: Column(
@@ -110,7 +359,8 @@ class _ChatScreenState extends State<ChatScreen> {
                                 icon: const Icon(Icons.clear_all, size: 16),
                                 label: const Text('Clear'),
                                 style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                  padding:
+                                      const EdgeInsets.symmetric(horizontal: 8),
                                 ),
                               ),
                             ],
@@ -124,6 +374,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       ],
                     ),
                   ),
+                // Chat Messages
                 Expanded(
                   child: ListView.builder(
                     controller: _scrollController,
@@ -136,6 +387,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     },
                   ),
                 ),
+                // Processing Indicator with Stop Button
                 ValueListenableBuilder<bool>(
                   valueListenable: _viewModel.isProcessing,
                   builder: (_, isProcessing, __) {
@@ -163,6 +415,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     );
                   },
                 ),
+                // Input Field
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Row(

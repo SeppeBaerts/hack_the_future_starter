@@ -502,3 +502,393 @@ final dataTrendCardItem = CatalogItem(
     );
   },
 );
+
+/// A custom widget for displaying ocean metrics with a gauge meter
+class OceanGaugeCard extends StatelessWidget {
+  const OceanGaugeCard({
+    required this.title,
+    required this.value,
+    required this.min,
+    required this.max,
+    required this.unit,
+    this.color = Colors.blue,
+    this.dangerThreshold,
+    super.key,
+  });
+
+  final String title;
+  final double value;
+  final double min;
+  final double max;
+  final String unit;
+  final Color color;
+  final double? dangerThreshold;
+
+  @override
+  Widget build(BuildContext context) {
+    final percentage = ((value - min) / (max - min)).clamp(0.0, 1.0);
+    final isDanger = dangerThreshold != null && value >= dangerThreshold!;
+    final displayColor = isDanger ? Colors.red : color;
+
+    return Card(
+      margin: const EdgeInsets.all(8.0),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Gauge visualization
+            SizedBox(
+              height: 120,
+              child: CustomPaint(
+                painter: _GaugePainter(
+                  percentage: percentage,
+                  color: displayColor,
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '${value.toStringAsFixed(1)}$unit',
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: displayColor,
+                        ),
+                      ),
+                      if (isDanger)
+                        const Text(
+                          'Warning',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${min.toStringAsFixed(0)}$unit',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                Text(
+                  '${max.toStringAsFixed(0)}$unit',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GaugePainter extends CustomPainter {
+  _GaugePainter({
+    required this.percentage,
+    required this.color,
+  });
+
+  final double percentage;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 10;
+
+    // Background arc
+    final backgroundPaint = Paint()
+      ..color = Colors.grey.shade300
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 15
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      0.75 * 3.14159, // Start at 135 degrees
+      1.5 * 3.14159, // Sweep 270 degrees
+      false,
+      backgroundPaint,
+    );
+
+    // Foreground arc (filled)
+    final foregroundPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 15
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      0.75 * 3.14159,
+      1.5 * 3.14159 * percentage,
+      false,
+      foregroundPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _GaugePainter oldDelegate) {
+    return oldDelegate.percentage != percentage || oldDelegate.color != color;
+  }
+}
+
+// Schema for OceanGaugeCard
+final _oceanGaugeSchema = S.object(
+  properties: {
+    'title': S.string(
+      description: 'Title of the gauge metric',
+    ),
+    'value': S.number(
+      description: 'Current value',
+    ),
+    'min': S.number(
+      description: 'Minimum value on the gauge',
+    ),
+    'max': S.number(
+      description: 'Maximum value on the gauge',
+    ),
+    'unit': S.string(
+      description: 'Unit of measurement',
+    ),
+    'dangerThreshold': S.number(
+      description: 'Optional threshold above which the gauge shows danger (red)',
+    ),
+  },
+  required: ['title', 'value', 'min', 'max', 'unit'],
+);
+
+extension type _OceanGaugeData.fromMap(Map<String, Object?> _json) {
+  factory _OceanGaugeData({
+    required String title,
+    required double value,
+    required double min,
+    required double max,
+    required String unit,
+    double? dangerThreshold,
+  }) =>
+      _OceanGaugeData.fromMap({
+        'title': title,
+        'value': value,
+        'min': min,
+        'max': max,
+        'unit': unit,
+        if (dangerThreshold != null) 'dangerThreshold': dangerThreshold,
+      });
+
+  String get title => _json['title'] as String;
+  double get value => (_json['value'] as num).toDouble();
+  double get min => (_json['min'] as num).toDouble();
+  double get max => (_json['max'] as num).toDouble();
+  String get unit => _json['unit'] as String;
+  double? get dangerThreshold => (_json['dangerThreshold'] as num?)?.toDouble();
+}
+
+final oceanGaugeCardItem = CatalogItem(
+  name: 'OceanGaugeCard',
+  dataSchema: _oceanGaugeSchema,
+  widgetBuilder: (context) {
+    final data = _OceanGaugeData.fromMap(
+      context.data as Map<String, Object?>,
+    );
+    return OceanGaugeCard(
+      title: data.title,
+      value: data.value,
+      min: data.min,
+      max: data.max,
+      unit: data.unit,
+      dangerThreshold: data.dangerThreshold,
+    );
+  },
+);
+
+/// A custom widget for displaying ocean data as a heatmap
+class OceanHeatmapCard extends StatelessWidget {
+  const OceanHeatmapCard({
+    required this.title,
+    required this.regions,
+    required this.unit,
+    super.key,
+  });
+
+  final String title;
+  final List<Map<String, dynamic>> regions;
+  final String unit;
+
+  @override
+  Widget build(BuildContext context) {
+    if (regions.isEmpty) {
+      return Card(
+        margin: const EdgeInsets.all(8.0),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text('No data available for $title'),
+        ),
+      );
+    }
+
+    // Calculate min/max for color scaling
+    final values = regions.map((r) => r['value'] as double).toList();
+    final minValue = values.reduce((a, b) => a < b ? a : b);
+    final maxValue = values.reduce((a, b) => a > b ? a : b);
+
+    return Card(
+      margin: const EdgeInsets.all(8.0),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ...regions.map((region) {
+              final name = region['name'] as String;
+              final value = region['value'] as double;
+              final normalized = (value - minValue) / (maxValue - minValue);
+              final color = Color.lerp(
+                Colors.blue.shade100,
+                Colors.red.shade700,
+                normalized,
+              )!;
+
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        name,
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 3,
+                      child: Container(
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: color,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Text(
+                          '${value.toStringAsFixed(1)}$unit',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: normalized > 0.5 ? Colors.white : Colors.black,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Min: ${minValue.toStringAsFixed(1)}$unit',
+                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                ),
+                Text(
+                  'Max: ${maxValue.toStringAsFixed(1)}$unit',
+                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Schema for OceanHeatmapCard
+final _oceanHeatmapSchema = S.object(
+  properties: {
+    'title': S.string(
+      description: 'Title of the heatmap',
+    ),
+    'regions': S.list(
+      description: 'List of regions with their values',
+      items: S.object(
+        properties: {
+          'name': S.string(
+            description: 'Name of the region',
+          ),
+          'value': S.number(
+            description: 'Value for this region',
+          ),
+        },
+        required: ['name', 'value'],
+      ),
+    ),
+    'unit': S.string(
+      description: 'Unit of measurement',
+    ),
+  },
+  required: ['title', 'regions', 'unit'],
+);
+
+extension type _OceanHeatmapData.fromMap(Map<String, Object?> _json) {
+  factory _OceanHeatmapData({
+    required String title,
+    required List<Map<String, Object?>> regions,
+    required String unit,
+  }) =>
+      _OceanHeatmapData.fromMap({
+        'title': title,
+        'regions': regions,
+        'unit': unit,
+      });
+
+  String get title => _json['title'] as String;
+  List<Map<String, dynamic>> get regions =>
+      (_json['regions'] as List).cast<Map<String, dynamic>>();
+  String get unit => _json['unit'] as String;
+}
+
+final oceanHeatmapCardItem = CatalogItem(
+  name: 'OceanHeatmapCard',
+  dataSchema: _oceanHeatmapSchema,
+  widgetBuilder: (context) {
+    final data = _OceanHeatmapData.fromMap(
+      context.data as Map<String, Object?>,
+    );
+    return OceanHeatmapCard(
+      title: data.title,
+      regions: data.regions,
+      unit: data.unit,
+    );
+  },
+);
