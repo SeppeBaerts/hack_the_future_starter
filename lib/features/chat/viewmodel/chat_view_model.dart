@@ -6,16 +6,20 @@ import 'package:hack_the_future_starter/features/chat/models/agent_log_entry.dar
 import 'package:hack_the_future_starter/features/chat/services/genui_service.dart';
 import 'package:hack_the_future_starter/features/chat/services/agent_log_service.dart';
 import 'package:hack_the_future_starter/features/chat/services/cancellable_content_generator.dart';
+import 'package:hack_the_future_starter/features/chat/services/query_history_service.dart';
 
 class ChatViewModel extends ChangeNotifier {
   ChatViewModel({
     GenUiService? service,
     AgentLogService? agentLogService,
+    QueryHistoryService? queryHistoryService,
   })  : _service = service ?? GenUiService(),
-        agentLogService = agentLogService ?? AgentLogService();
+        agentLogService = agentLogService ?? AgentLogService(),
+        queryHistoryService = queryHistoryService ?? QueryHistoryService();
 
   final GenUiService _service;
   final AgentLogService agentLogService;
+  final QueryHistoryService queryHistoryService;
 
   late final Catalog _catalog;
   late final GenUiManager _manager;
@@ -68,6 +72,10 @@ class ChatViewModel extends ChangeNotifier {
 
   Future<void> send(String text) async {
     if (text.trim().isEmpty) return;
+    
+    // Add to query history
+    queryHistoryService.addQuery(text);
+    notifyListeners(); // Notify to update query history UI
     
     // Start a new conversation context (but don't clear old logs)
     agentLogService.startNewConversation();

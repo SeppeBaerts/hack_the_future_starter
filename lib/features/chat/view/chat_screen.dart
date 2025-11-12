@@ -201,6 +201,37 @@ class _ChatScreenState extends State<ChatScreen> {
                     );
                   },
                 ),
+                // Query History - show above input field when not processing
+                if (_viewModel.queryHistoryService.history.isNotEmpty &&
+                    !_viewModel.isProcessing.value)
+                  Container(
+                    height: 50,
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _viewModel.queryHistoryService.history.length,
+                      itemBuilder: (context, index) {
+                        final query =
+                            _viewModel.queryHistoryService.history[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: ActionChip(
+                            label: Text(
+                              query.query.length > 30
+                                  ? '${query.query.substring(0, 30)}...'
+                                  : query.query,
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                            avatar: const Icon(Icons.history, size: 16),
+                            onPressed: () {
+                              _textController.text = query.query;
+                            },
+                            backgroundColor: Colors.blue.shade50,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 Padding(
                   padding: const EdgeInsets.all(12.0),
                   child: Container(
