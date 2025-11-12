@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:genui/genui.dart';
 import 'package:hack_the_future_starter/features/chat/models/chat_message.dart';
 import 'package:hack_the_future_starter/features/chat/models/agent_log_entry.dart';
 import 'package:hack_the_future_starter/features/chat/services/genui_service.dart';
 import 'package:hack_the_future_starter/features/chat/services/agent_log_service.dart';
+import 'package:hack_the_future_starter/features/chat/services/cancellable_content_generator.dart';
 
 class ChatViewModel extends ChangeNotifier {
   ChatViewModel({
@@ -18,6 +20,7 @@ class ChatViewModel extends ChangeNotifier {
   late final Catalog _catalog;
   late final GenUiManager _manager;
   late final GenUiConversation _conversation;
+  late final CancellableContentGenerator _cancellableGenerator;
 
   GenUiHost get host => _conversation.host;
 
@@ -34,10 +37,13 @@ class ChatViewModel extends ChangeNotifier {
       catalog: _catalog,
       logService: agentLogService,
     );
+    
+    // Wrap the generator with cancellation support
+    _cancellableGenerator = CancellableContentGenerator(generator);
 
     _conversation = GenUiConversation(
       genUiManager: _manager,
-      contentGenerator: generator,
+      contentGenerator: _cancellableGenerator,
       onSurfaceAdded: (s) {
         agentLogService.logPresent('Created UI surface with widgets');
         _messages.add(ChatMessageModel(surfaceId: s.surfaceId));
@@ -76,12 +82,13 @@ class ChatViewModel extends ChangeNotifier {
   }
 
   void abort() {
-    // Note: GenUI doesn't directly expose abort, but we can track this
     agentLogService.addEntry(
       AgentStep.act,
       'User requested to stop the agent',
     );
-    // The conversation will naturally stop after current processing
+    
+    // Cancel the current request
+    _cancellableGenerator.cancel();
   }
 
   void disposeConversation() {
