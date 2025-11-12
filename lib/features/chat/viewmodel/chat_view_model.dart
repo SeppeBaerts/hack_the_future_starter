@@ -4,16 +4,24 @@ import 'package:hack_the_future_starter/features/chat/models/chat_message.dart';
 import 'package:hack_the_future_starter/features/chat/models/agent_log_entry.dart';
 import 'package:hack_the_future_starter/features/chat/services/genui_service.dart';
 import 'package:hack_the_future_starter/features/chat/services/agent_log_service.dart';
+import 'package:hack_the_future_starter/features/chat/services/query_history_service.dart';
+import 'package:hack_the_future_starter/features/chat/services/favorites_service.dart';
 
 class ChatViewModel extends ChangeNotifier {
   ChatViewModel({
     GenUiService? service,
     AgentLogService? agentLogService,
+    QueryHistoryService? queryHistoryService,
+    FavoritesService? favoritesService,
   })  : _service = service ?? GenUiService(),
-        agentLogService = agentLogService ?? AgentLogService();
+        agentLogService = agentLogService ?? AgentLogService(),
+        queryHistoryService = queryHistoryService ?? QueryHistoryService(),
+        favoritesService = favoritesService ?? FavoritesService();
 
   final GenUiService _service;
   final AgentLogService agentLogService;
+  final QueryHistoryService queryHistoryService;
+  final FavoritesService favoritesService;
 
   late final Catalog _catalog;
   late final GenUiManager _manager;
@@ -61,6 +69,9 @@ class ChatViewModel extends ChangeNotifier {
     
     // Clear previous logs for new query
     agentLogService.clear();
+    
+    // Add to history
+    queryHistoryService.addQuery(text);
     
     // Log the user's question
     agentLogService.logPerceive('User asked: "$text"');

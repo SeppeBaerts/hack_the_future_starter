@@ -17,6 +17,8 @@ class GenUiService {
       waveInfoCardItem,
       salinityCardItem,
       dataTrendCardItem,
+      oceanGaugeCardItem,
+      oceanHeatmapCardItem,
     ]);
   }
 
@@ -245,6 +247,12 @@ You have access to these special ocean visualization components:
 4. **DataTrendCard**: Shows min/avg/max statistics for a data series
    - Properties: title (string), dataPoints (array of objects with 'value' and 'timestamp'), unit (string), color (optional)
 
+5. **OceanGaugeCard**: Displays a gauge meter for ocean metrics with optional danger threshold
+   - Properties: title (string), value (number), min (number), max (number), unit (string), dangerThreshold (number, optional)
+
+6. **OceanHeatmapCard**: Shows regional data comparison as a color-coded heatmap
+   - Properties: title (string), regions (array of objects with 'name' and 'value'), unit (string)
+
 ## Controlling the UI
 
 Use the provided tools to build and manage the user interface in response to user requests. To display or update a UI, you must first call the `surfaceUpdate` tool to define all the necessary components. After defining the components, you must call the `beginRendering` tool to specify the root component that should be displayed.
@@ -266,6 +274,8 @@ Always prefer to communicate using UI elements rather than text. Only respond wi
   - Use `WaveInfoCard` for wave information
   - Use `SalinityCard` for salinity data
   - Use `DataTrendCard` for trend analysis with min/avg/max
+  - Use `OceanGaugeCard` for single metric visualization with gauges
+  - Use `OceanHeatmapCard` for comparing multiple regions
   - Use `Column` to stack multiple cards vertically
 
 - **Workflow**: Always follow this pattern:
