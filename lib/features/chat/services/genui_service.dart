@@ -2,6 +2,8 @@ import 'package:genui/genui.dart';
 import 'package:genui_firebase_ai/genui_firebase_ai.dart';
 import 'package:json_schema_builder/json_schema_builder.dart';
 import '../widgets/ocean_widgets.dart';
+import '../models/agent_log_entry.dart';
+import 'agent_log_service.dart';
 import 'ocean_data_service.dart';
 
 class GenUiService {
@@ -20,28 +22,31 @@ class GenUiService {
     ]);
   }
 
-  FirebaseAiContentGenerator createContentGenerator({Catalog? catalog}) {
+  FirebaseAiContentGenerator createContentGenerator({
+    Catalog? catalog,
+    AgentLogService? logService,
+  }) {
     final cat = catalog ?? createCatalog();
     return FirebaseAiContentGenerator(
       catalog: cat,
       systemInstruction: _oceanExplorerPrompt,
-      additionalTools: _createOceanTools(),
+      additionalTools: _createOceanTools(logService),
     );
   }
 
-  List<AiTool> _createOceanTools() {
+  List<AiTool> _createOceanTools(AgentLogService? logService) {
     return [
-      _GetOceanTemperatureTool(_oceanDataService),
-      _GetOceanSalinityTool(_oceanDataService),
-      _GetWaveDataTool(_oceanDataService),
-      _GetCurrentConditionsTool(_oceanDataService),
+      _GetOceanTemperatureTool(_oceanDataService, logService),
+      _GetOceanSalinityTool(_oceanDataService, logService),
+      _GetWaveDataTool(_oceanDataService, logService),
+      _GetCurrentConditionsTool(_oceanDataService, logService),
     ];
   }
 }
 
 // Tool for getting ocean temperature data
 class _GetOceanTemperatureTool extends AiTool<Map<String, Object?>> {
-  _GetOceanTemperatureTool(this._dataService)
+  _GetOceanTemperatureTool(this._dataService, this._logService)
       : super(
           name: 'getOceanTemperature',
           description:
@@ -64,13 +69,24 @@ class _GetOceanTemperatureTool extends AiTool<Map<String, Object?>> {
         );
 
   final OceanDataService _dataService;
+  final AgentLogService? _logService;
 
   @override
   Future<JsonMap> invoke(JsonMap args) async {
     final region = args['region'] as String? ?? 'North Sea';
     final days = (args['days'] as int?) ?? 30;
 
+    _logService?.logAct(
+      'Querying ocean temperature data',
+      details: {'tool': 'getOceanTemperature', 'region': region, 'days': days},
+    );
+
     final data = _dataService.getTemperatureData(region, days: days);
+    
+    _logService?.logReflect(
+      'Retrieved ${data.length} temperature data points for $region',
+    );
+
     return {
       'region': region,
       'data': data.map((d) => d.toJson()).toList(),
@@ -81,7 +97,7 @@ class _GetOceanTemperatureTool extends AiTool<Map<String, Object?>> {
 
 // Tool for getting ocean salinity data
 class _GetOceanSalinityTool extends AiTool<Map<String, Object?>> {
-  _GetOceanSalinityTool(this._dataService)
+  _GetOceanSalinityTool(this._dataService, this._logService)
       : super(
           name: 'getOceanSalinity',
           description:
@@ -103,13 +119,24 @@ class _GetOceanSalinityTool extends AiTool<Map<String, Object?>> {
         );
 
   final OceanDataService _dataService;
+  final AgentLogService? _logService;
 
   @override
   Future<JsonMap> invoke(JsonMap args) async {
     final region = args['region'] as String? ?? 'North Sea';
     final days = (args['days'] as int?) ?? 30;
 
+    _logService?.logAct(
+      'Querying ocean salinity data',
+      details: {'tool': 'getOceanSalinity', 'region': region, 'days': days},
+    );
+
     final data = _dataService.getSalinityData(region, days: days);
+    
+    _logService?.logReflect(
+      'Retrieved ${data.length} salinity data points for $region',
+    );
+
     return {
       'region': region,
       'data': data.map((d) => d.toJson()).toList(),
@@ -120,7 +147,7 @@ class _GetOceanSalinityTool extends AiTool<Map<String, Object?>> {
 
 // Tool for getting wave data
 class _GetWaveDataTool extends AiTool<Map<String, Object?>> {
-  _GetWaveDataTool(this._dataService)
+  _GetWaveDataTool(this._dataService, this._logService)
       : super(
           name: 'getWaveData',
           description:
@@ -138,12 +165,23 @@ class _GetWaveDataTool extends AiTool<Map<String, Object?>> {
         );
 
   final OceanDataService _dataService;
+  final AgentLogService? _logService;
 
   @override
   Future<JsonMap> invoke(JsonMap args) async {
     final count = (args['count'] as int?) ?? 10;
 
+    _logService?.logAct(
+      'Querying wave data',
+      details: {'tool': 'getWaveData', 'count': count},
+    );
+
     final data = _dataService.getWaveData(count: count);
+    
+    _logService?.logReflect(
+      'Retrieved ${data.length} wave measurements from various locations',
+    );
+
     return {
       'measurements': data.map((w) => w.toJson()).toList(),
     };
@@ -152,7 +190,7 @@ class _GetWaveDataTool extends AiTool<Map<String, Object?>> {
 
 // Tool for getting current conditions
 class _GetCurrentConditionsTool extends AiTool<Map<String, Object?>> {
-  _GetCurrentConditionsTool(this._dataService)
+  _GetCurrentConditionsTool(this._dataService, this._logService)
       : super(
           name: 'getCurrentConditions',
           description:
@@ -169,11 +207,24 @@ class _GetCurrentConditionsTool extends AiTool<Map<String, Object?>> {
         );
 
   final OceanDataService _dataService;
+  final AgentLogService? _logService;
 
   @override
   Future<JsonMap> invoke(JsonMap args) async {
     final region = args['region'] as String? ?? 'North Sea';
-    return _dataService.getCurrentConditions(region);
+    
+    _logService?.logAct(
+      'Querying current ocean conditions',
+      details: {'tool': 'getCurrentConditions', 'region': region},
+    );
+    
+    final result = _dataService.getCurrentConditions(region);
+    
+    _logService?.logReflect(
+      'Retrieved current conditions for $region',
+    );
+    
+    return result;
   }
 }
 

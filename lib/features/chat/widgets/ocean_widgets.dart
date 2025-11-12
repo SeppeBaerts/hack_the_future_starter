@@ -15,46 +15,127 @@ class OceanTemperatureCard extends StatelessWidget {
   final double temperature;
   final String unit;
 
+  Color _getTemperatureColor(double temp) {
+    if (temp < 5) return Colors.blue.shade700;
+    if (temp < 15) return Colors.cyan.shade600;
+    if (temp < 25) return Colors.orange.shade600;
+    return Colors.red.shade600;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final tempColor = _getTemperatureColor(temperature);
+    
     return Card(
-      margin: const EdgeInsets.all(8.0),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.thermostat, color: Colors.blue, size: 32),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    region,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+      margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              tempColor.withOpacity(0.1),
+              tempColor.withOpacity(0.05),
+            ],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: tempColor.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.thermostat,
+                      color: tempColor,
+                      size: 28,
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Center(
-              child: Text(
-                '${temperature.toStringAsFixed(1)}$unit',
-                style: const TextStyle(
-                  fontSize: 48,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          region,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade800,
+                          ),
+                        ),
+                        Text(
+                          'Ocean Temperature',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Center(
+                child: Column(
+                  children: [
+                    Text(
+                      '${temperature.toStringAsFixed(1)}$unit',
+                      style: TextStyle(
+                        fontSize: 56,
+                        fontWeight: FontWeight.bold,
+                        color: tempColor,
+                        letterSpacing: -2,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: tempColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        _getTemperatureLabel(temperature),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: tempColor,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  String _getTemperatureLabel(double temp) {
+    if (temp < 5) return 'Very Cold';
+    if (temp < 15) return 'Cold';
+    if (temp < 25) return 'Moderate';
+    return 'Warm';
   }
 }
 
@@ -73,66 +154,141 @@ class WaveInfoCard extends StatelessWidget {
   final double period;
   final String direction;
 
+  Color _getWaveColor(double height) {
+    if (height < 1) return Colors.cyan.shade400;
+    if (height < 3) return Colors.blue.shade500;
+    if (height < 5) return Colors.indigo.shade600;
+    return Colors.deepPurple.shade700;
+  }
+
+  String _getWaveSeverity(double height) {
+    if (height < 1) return 'Calm';
+    if (height < 3) return 'Moderate';
+    if (height < 5) return 'Rough';
+    return 'Very Rough';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final waveColor = _getWaveColor(height);
+    
     return Card(
-      margin: const EdgeInsets.all(8.0),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.water, color: Colors.cyan, size: 32),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    region,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+      margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              waveColor.withOpacity(0.15),
+              waveColor.withOpacity(0.05),
+            ],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: waveColor.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.water,
+                      color: waveColor,
+                      size: 28,
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildMetric('Height', '${height.toStringAsFixed(1)}m'),
-                _buildMetric('Period', '${period.toStringAsFixed(1)}s'),
-                _buildMetric('Direction', direction),
-              ],
-            ),
-          ],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          region,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade800,
+                          ),
+                        ),
+                        Text(
+                          _getWaveSeverity(height),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: waveColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildMetric('Height', '${height.toStringAsFixed(1)}m', waveColor),
+                  _buildMetric('Period', '${period.toStringAsFixed(1)}s', waveColor),
+                  _buildMetric('Direction', direction, waveColor),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildMetric(String label, String value) {
-    return Column(
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Colors.grey,
+  Widget _buildMetric(String label, String value, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: color.withOpacity(0.2),
+            width: 1,
           ),
         ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.cyan,
-          ),
+        child: Column(
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey.shade600,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
@@ -148,55 +304,114 @@ class SalinityCard extends StatelessWidget {
   final String region;
   final double salinity;
 
+  Color _getSalinityColor(double salinity) {
+    // Typical ocean salinity is 33-37 PSU
+    if (salinity < 33) return Colors.lightBlue.shade600;
+    if (salinity < 35.5) return Colors.teal.shade600;
+    return Colors.cyan.shade700;
+  }
+
+  String _getSalinityLevel(double salinity) {
+    if (salinity < 33) return 'Low Salinity';
+    if (salinity < 35.5) return 'Normal Salinity';
+    return 'High Salinity';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final salinityColor = _getSalinityColor(salinity);
+    
     return Card(
-      margin: const EdgeInsets.all(8.0),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.opacity, color: Colors.teal, size: 32),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    region,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Center(
-              child: Column(
+      margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              salinityColor.withOpacity(0.15),
+              salinityColor.withOpacity(0.05),
+            ],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
                 children: [
-                  Text(
-                    '${salinity.toStringAsFixed(1)} PSU',
-                    style: const TextStyle(
-                      fontSize: 36,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.teal,
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: salinityColor.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.opacity,
+                      color: salinityColor,
+                      size: 28,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Salinity',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          region,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade800,
+                          ),
+                        ),
+                        Text(
+                          _getSalinityLevel(salinity),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: salinityColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
-            ),
-          ],
+              const SizedBox(height: 20),
+              Center(
+                child: Column(
+                  children: [
+                    Text(
+                      '${salinity.toStringAsFixed(1)} PSU',
+                      style: TextStyle(
+                        fontSize: 48,
+                        fontWeight: FontWeight.bold,
+                        color: salinityColor,
+                        letterSpacing: -1,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Practical Salinity Units',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -222,10 +437,17 @@ class DataTrendCard extends StatelessWidget {
   Widget build(BuildContext context) {
     if (dataPoints.isEmpty) {
       return Card(
-        margin: const EdgeInsets.all(8.0),
+        margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Text('No data available for $title'),
+          padding: const EdgeInsets.all(20.0),
+          child: Text(
+            'No data available for $title',
+            style: TextStyle(color: Colors.grey.shade600),
+          ),
         ),
       );
     }
@@ -236,63 +458,166 @@ class DataTrendCard extends StatelessWidget {
     final avgValue = values.reduce((a, b) => a + b) / values.length;
 
     return Card(
-      margin: const EdgeInsets.all(8.0),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+      margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              color.withOpacity(0.12),
+              color.withOpacity(0.04),
+            ],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.show_chart,
+                      color: color,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade800,
+                          ),
+                        ),
+                        Text(
+                          '${dataPoints.length} data points',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildStat('Min', minValue, unit, color),
-                _buildStat('Avg', avgValue, unit, color),
-                _buildStat('Max', maxValue, unit, color),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              '${dataPoints.length} data points over ${dataPoints.length} days',
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
+              const SizedBox(height: 20),
+              // Simple visualization with bars
+              _buildSimpleChart(values, minValue, maxValue, color),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildStat('Min', minValue, unit, color),
+                  _buildStat('Avg', avgValue, unit, color),
+                  _buildStat('Max', maxValue, unit, color),
+                ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
+  Widget _buildSimpleChart(List<double> values, double min, double max, Color color) {
+    final range = max - min;
+    if (range == 0) {
+      return Container(
+        height: 80,
+        alignment: Alignment.center,
+        child: Text(
+          'All values are the same',
+          style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+        ),
+      );
+    }
+
+    return Container(
+      height: 80,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: values.take(30).map((value) {
+          final normalizedHeight = ((value - min) / range).clamp(0.1, 1.0);
+          return Expanded(
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 1),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(2)),
+                gradient: LinearGradient(
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                  colors: [
+                    color.withOpacity(0.8),
+                    color.withOpacity(0.4),
+                  ],
+                ),
+              ),
+              height: 70 * normalizedHeight,
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
   Widget _buildStat(String label, double value, String unit, Color color) {
-    return Column(
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Colors.grey,
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: color.withOpacity(0.2),
+            width: 1,
           ),
         ),
-        const SizedBox(height: 4),
-        Text(
-          '${value.toStringAsFixed(1)}$unit',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
+        child: Column(
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey.shade600,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '${value.toStringAsFixed(1)}$unit',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

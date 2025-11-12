@@ -11,11 +11,15 @@ class AgentLogEntry {
     required this.step,
     required this.message,
     required this.timestamp,
+    this.conversationId,
+    this.details,
   });
 
   final AgentStep step;
   final String message;
   final DateTime timestamp;
+  final String? conversationId;
+  final Map<String, dynamic>? details;
 
   String get stepName {
     switch (step) {
