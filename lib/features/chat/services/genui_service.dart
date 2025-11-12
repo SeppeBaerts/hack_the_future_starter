@@ -1,5 +1,6 @@
 import 'package:genui/genui.dart';
 import 'package:genui_firebase_ai/genui_firebase_ai.dart';
+import 'package:json_schema_builder/json_schema_builder.dart';
 import '../widgets/ocean_widgets.dart';
 import 'ocean_data_service.dart';
 
@@ -28,99 +29,151 @@ class GenUiService {
     );
   }
 
-  List<DynamicAiTool> _createOceanTools() {
+  List<AiTool> _createOceanTools() {
     return [
-      DynamicAiTool(
-        name: 'getOceanTemperature',
-        description:
-            'Retrieves ocean temperature data for a specific region over a time period. '
-            'Returns a list of data points with timestamps and temperature values.',
-        parameters: {
-          'region': PropertySchema<String>(
-            description: 'Name of the ocean region (e.g., "North Sea", "Atlantic Ocean")',
-            defaultValue: 'North Sea',
-          ),
-          'days': PropertySchema<int>(
-            description: 'Number of days of historical data to retrieve (default: 30)',
-            defaultValue: 30,
-          ),
-        },
-        handler: (args) async {
-          final region = args['region'] as String? ?? 'North Sea';
-          final days = args['days'] as int? ?? 30;
-          
-          final data = _oceanDataService.getTemperatureData(region, days: days);
-          return {
-            'region': region,
-            'data': data.map((d) => d.toJson()).toList(),
-            'unit': '°C',
-          };
-        },
-      ),
-      DynamicAiTool(
-        name: 'getOceanSalinity',
-        description:
-            'Retrieves ocean salinity data for a specific region over a time period. '
-            'Returns a list of data points with timestamps and salinity values in PSU.',
-        parameters: {
-          'region': PropertySchema<String>(
-            description: 'Name of the ocean region',
-            defaultValue: 'North Sea',
-          ),
-          'days': PropertySchema<int>(
-            description: 'Number of days of historical data to retrieve (default: 30)',
-            defaultValue: 30,
-          ),
-        },
-        handler: (args) async {
-          final region = args['region'] as String? ?? 'North Sea';
-          final days = args['days'] as int? ?? 30;
-          
-          final data = _oceanDataService.getSalinityData(region, days: days);
-          return {
-            'region': region,
-            'data': data.map((d) => d.toJson()).toList(),
-            'unit': 'PSU',
-          };
-        },
-      ),
-      DynamicAiTool(
-        name: 'getWaveData',
-        description:
-            'Retrieves wave measurement data from various ocean regions. '
-            'Returns wave height, period, and direction for multiple locations.',
-        parameters: {
-          'count': PropertySchema<int>(
-            description: 'Number of wave measurements to retrieve (default: 10)',
-            defaultValue: 10,
-          ),
-        },
-        handler: (args) async {
-          final count = args['count'] as int? ?? 10;
-          
-          final data = _oceanDataService.getWaveData(count: count);
-          return {
-            'measurements': data.map((w) => w.toJson()).toList(),
-          };
-        },
-      ),
-      DynamicAiTool(
-        name: 'getCurrentConditions',
-        description:
-            'Retrieves current ocean conditions for a specific region including '
-            'temperature, salinity, wave height, and wind speed.',
-        parameters: {
-          'region': PropertySchema<String>(
-            description: 'Name of the ocean region',
-            defaultValue: 'North Sea',
-          ),
-        },
-        handler: (args) async {
-          final region = args['region'] as String? ?? 'North Sea';
-          return _oceanDataService.getCurrentConditions(region);
-        },
-      ),
+      _GetOceanTemperatureTool(_oceanDataService),
+      _GetOceanSalinityTool(_oceanDataService),
+      _GetWaveDataTool(_oceanDataService),
+      _GetCurrentConditionsTool(_oceanDataService),
     ];
+  }
+}
+
+// Tool for getting ocean temperature data
+class _GetOceanTemperatureTool extends AiTool<Map<String, Object?>> {
+  _GetOceanTemperatureTool(this._dataService)
+      : super(
+          name: 'getOceanTemperature',
+          description:
+              'Retrieves ocean temperature data for a specific region over a time period. '
+              'Returns a list of data points with timestamps and temperature values.',
+          parameters: S.object(
+            properties: {
+              'region': S.string(
+                description:
+                    'Name of the ocean region (e.g., "North Sea", "Atlantic Ocean")',
+              ),
+              'days': S.integer(
+                description: 'Number of days of historical data to retrieve',
+                minimum: 1,
+                maximum: 365,
+              ),
+            },
+            required: ['region'],
+          ),
+        );
+
+  final OceanDataService _dataService;
+
+  @override
+  Future<JsonMap> invoke(JsonMap args) async {
+    final region = args['region'] as String? ?? 'North Sea';
+    final days = (args['days'] as int?) ?? 30;
+
+    final data = _dataService.getTemperatureData(region, days: days);
+    return {
+      'region': region,
+      'data': data.map((d) => d.toJson()).toList(),
+      'unit': '°C',
+    };
+  }
+}
+
+// Tool for getting ocean salinity data
+class _GetOceanSalinityTool extends AiTool<Map<String, Object?>> {
+  _GetOceanSalinityTool(this._dataService)
+      : super(
+          name: 'getOceanSalinity',
+          description:
+              'Retrieves ocean salinity data for a specific region over a time period. '
+              'Returns a list of data points with timestamps and salinity values in PSU.',
+          parameters: S.object(
+            properties: {
+              'region': S.string(
+                description: 'Name of the ocean region',
+              ),
+              'days': S.integer(
+                description: 'Number of days of historical data to retrieve',
+                minimum: 1,
+                maximum: 365,
+              ),
+            },
+            required: ['region'],
+          ),
+        );
+
+  final OceanDataService _dataService;
+
+  @override
+  Future<JsonMap> invoke(JsonMap args) async {
+    final region = args['region'] as String? ?? 'North Sea';
+    final days = (args['days'] as int?) ?? 30;
+
+    final data = _dataService.getSalinityData(region, days: days);
+    return {
+      'region': region,
+      'data': data.map((d) => d.toJson()).toList(),
+      'unit': 'PSU',
+    };
+  }
+}
+
+// Tool for getting wave data
+class _GetWaveDataTool extends AiTool<Map<String, Object?>> {
+  _GetWaveDataTool(this._dataService)
+      : super(
+          name: 'getWaveData',
+          description:
+              'Retrieves wave measurement data from various ocean regions. '
+              'Returns wave height, period, and direction for multiple locations.',
+          parameters: S.object(
+            properties: {
+              'count': S.integer(
+                description: 'Number of wave measurements to retrieve',
+                minimum: 1,
+                maximum: 50,
+              ),
+            },
+          ),
+        );
+
+  final OceanDataService _dataService;
+
+  @override
+  Future<JsonMap> invoke(JsonMap args) async {
+    final count = (args['count'] as int?) ?? 10;
+
+    final data = _dataService.getWaveData(count: count);
+    return {
+      'measurements': data.map((w) => w.toJson()).toList(),
+    };
+  }
+}
+
+// Tool for getting current conditions
+class _GetCurrentConditionsTool extends AiTool<Map<String, Object?>> {
+  _GetCurrentConditionsTool(this._dataService)
+      : super(
+          name: 'getCurrentConditions',
+          description:
+              'Retrieves current ocean conditions for a specific region including '
+              'temperature, salinity, wave height, and wind speed.',
+          parameters: S.object(
+            properties: {
+              'region': S.string(
+                description: 'Name of the ocean region',
+              ),
+            },
+            required: ['region'],
+          ),
+        );
+
+  final OceanDataService _dataService;
+
+  @override
+  Future<JsonMap> invoke(JsonMap args) async {
+    final region = args['region'] as String? ?? 'North Sea';
+    return _dataService.getCurrentConditions(region);
   }
 }
 

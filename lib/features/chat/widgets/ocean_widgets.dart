@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:genui/genui.dart';
+import 'package:json_schema_builder/json_schema_builder.dart';
 
 /// A custom widget for displaying ocean temperature information
 class OceanTemperatureCard extends StatelessWidget {
@@ -297,101 +298,207 @@ class DataTrendCard extends StatelessWidget {
 }
 
 // Catalog item definitions for GenUI
-final oceanTemperatureCardItem = CatalogItem<OceanTemperatureCard>(
-  type: 'OceanTemperatureCard',
-  description: 'Displays ocean temperature for a region with a thermometer icon',
-  builder: (context) => const OceanTemperatureCard(
-    region: 'Unknown',
-    temperature: 0.0,
-  ),
-  propertiesSchema: {
-    'region': PropertySchema<String>(
+
+// Schema for OceanTemperatureCard
+final _oceanTemperatureSchema = S.object(
+  properties: {
+    'region': S.string(
       description: 'Name of the ocean region',
-      defaultValue: 'Unknown Region',
     ),
-    'temperature': PropertySchema<double>(
+    'temperature': S.number(
       description: 'Temperature value in degrees',
-      defaultValue: 0.0,
     ),
-    'unit': PropertySchema<String>(
+    'unit': S.string(
       description: 'Temperature unit (default: °C)',
-      defaultValue: '°C',
     ),
+  },
+  required: ['region', 'temperature'],
+);
+
+extension type _OceanTemperatureData.fromMap(Map<String, Object?> _json) {
+  factory _OceanTemperatureData({
+    required String region,
+    required double temperature,
+    String? unit,
+  }) =>
+      _OceanTemperatureData.fromMap({
+        'region': region,
+        'temperature': temperature,
+        if (unit != null) 'unit': unit,
+      });
+
+  String get region => _json['region'] as String;
+  double get temperature => (_json['temperature'] as num).toDouble();
+  String get unit => (_json['unit'] as String?) ?? '°C';
+}
+
+final oceanTemperatureCardItem = CatalogItem(
+  name: 'OceanTemperatureCard',
+  dataSchema: _oceanTemperatureSchema,
+  widgetBuilder: (context) {
+    final data = _OceanTemperatureData.fromMap(
+      context.data as Map<String, Object?>,
+    );
+    return OceanTemperatureCard(
+      region: data.region,
+      temperature: data.temperature,
+      unit: data.unit,
+    );
   },
 );
 
-final waveInfoCardItem = CatalogItem<WaveInfoCard>(
-  type: 'WaveInfoCard',
-  description: 'Displays wave information including height, period, and direction',
-  builder: (context) => const WaveInfoCard(
-    region: 'Unknown',
-    height: 0.0,
-    period: 0.0,
-    direction: 'N',
-  ),
-  propertiesSchema: {
-    'region': PropertySchema<String>(
+// Schema for WaveInfoCard
+final _waveInfoSchema = S.object(
+  properties: {
+    'region': S.string(
       description: 'Name of the ocean region',
-      defaultValue: 'Unknown Region',
     ),
-    'height': PropertySchema<double>(
+    'height': S.number(
       description: 'Wave height in meters',
-      defaultValue: 0.0,
     ),
-    'period': PropertySchema<double>(
+    'period': S.number(
       description: 'Wave period in seconds',
-      defaultValue: 0.0,
     ),
-    'direction': PropertySchema<String>(
+    'direction': S.string(
       description: 'Wave direction (N, NE, E, SE, S, SW, W, NW)',
-      defaultValue: 'N',
     ),
+  },
+  required: ['region', 'height', 'period', 'direction'],
+);
+
+extension type _WaveInfoData.fromMap(Map<String, Object?> _json) {
+  factory _WaveInfoData({
+    required String region,
+    required double height,
+    required double period,
+    required String direction,
+  }) =>
+      _WaveInfoData.fromMap({
+        'region': region,
+        'height': height,
+        'period': period,
+        'direction': direction,
+      });
+
+  String get region => _json['region'] as String;
+  double get height => (_json['height'] as num).toDouble();
+  double get period => (_json['period'] as num).toDouble();
+  String get direction => _json['direction'] as String;
+}
+
+final waveInfoCardItem = CatalogItem(
+  name: 'WaveInfoCard',
+  dataSchema: _waveInfoSchema,
+  widgetBuilder: (context) {
+    final data = _WaveInfoData.fromMap(
+      context.data as Map<String, Object?>,
+    );
+    return WaveInfoCard(
+      region: data.region,
+      height: data.height,
+      period: data.period,
+      direction: data.direction,
+    );
   },
 );
 
-final salinityCardItem = CatalogItem<SalinityCard>(
-  type: 'SalinityCard',
-  description: 'Displays ocean salinity in PSU (Practical Salinity Units)',
-  builder: (context) => const SalinityCard(
-    region: 'Unknown',
-    salinity: 0.0,
-  ),
-  propertiesSchema: {
-    'region': PropertySchema<String>(
+// Schema for SalinityCard
+final _salinitySchema = S.object(
+  properties: {
+    'region': S.string(
       description: 'Name of the ocean region',
-      defaultValue: 'Unknown Region',
     ),
-    'salinity': PropertySchema<double>(
+    'salinity': S.number(
       description: 'Salinity value in PSU',
-      defaultValue: 0.0,
     ),
+  },
+  required: ['region', 'salinity'],
+);
+
+extension type _SalinityData.fromMap(Map<String, Object?> _json) {
+  factory _SalinityData({
+    required String region,
+    required double salinity,
+  }) =>
+      _SalinityData.fromMap({
+        'region': region,
+        'salinity': salinity,
+      });
+
+  String get region => _json['region'] as String;
+  double get salinity => (_json['salinity'] as num).toDouble();
+}
+
+final salinityCardItem = CatalogItem(
+  name: 'SalinityCard',
+  dataSchema: _salinitySchema,
+  widgetBuilder: (context) {
+    final data = _SalinityData.fromMap(
+      context.data as Map<String, Object?>,
+    );
+    return SalinityCard(
+      region: data.region,
+      salinity: data.salinity,
+    );
   },
 );
 
-final dataTrendCardItem = CatalogItem<DataTrendCard>(
-  type: 'DataTrendCard',
-  description: 'Displays trend statistics (min, avg, max) for a dataset',
-  builder: (context) => const DataTrendCard(
-    title: 'Data Trend',
-    dataPoints: [],
-    unit: '',
-  ),
-  propertiesSchema: {
-    'title': PropertySchema<String>(
+// Schema for DataTrendCard
+final _dataTrendSchema = S.object(
+  properties: {
+    'title': S.string(
       description: 'Title of the data trend',
-      defaultValue: 'Data Trend',
     ),
-    'dataPoints': PropertySchema<List<Map<String, dynamic>>>(
+    'dataPoints': S.list(
       description: 'List of data points with timestamp and value',
-      defaultValue: [],
+      items: S.object(
+        properties: {
+          'timestamp': S.string(
+            description: 'ISO 8601 timestamp for the data point',
+          ),
+          'value': S.number(
+            description: 'The numeric value for this data point',
+          ),
+        },
+        required: ['timestamp', 'value'],
+      ),
     ),
-    'unit': PropertySchema<String>(
+    'unit': S.string(
       description: 'Unit of measurement',
-      defaultValue: '',
     ),
-    'color': PropertySchema<Color>(
-      description: 'Color for the statistics',
-      defaultValue: Colors.blue,
-    ),
+  },
+  required: ['title', 'dataPoints', 'unit'],
+);
+
+extension type _DataTrendData.fromMap(Map<String, Object?> _json) {
+  factory _DataTrendData({
+    required String title,
+    required List<Map<String, Object?>> dataPoints,
+    required String unit,
+  }) =>
+      _DataTrendData.fromMap({
+        'title': title,
+        'dataPoints': dataPoints,
+        'unit': unit,
+      });
+
+  String get title => _json['title'] as String;
+  List<Map<String, dynamic>> get dataPoints =>
+      (_json['dataPoints'] as List).cast<Map<String, dynamic>>();
+  String get unit => _json['unit'] as String;
+}
+
+final dataTrendCardItem = CatalogItem(
+  name: 'DataTrendCard',
+  dataSchema: _dataTrendSchema,
+  widgetBuilder: (context) {
+    final data = _DataTrendData.fromMap(
+      context.data as Map<String, Object?>,
+    );
+    return DataTrendCard(
+      title: data.title,
+      dataPoints: data.dataPoints,
+      unit: data.unit,
+    );
   },
 );
