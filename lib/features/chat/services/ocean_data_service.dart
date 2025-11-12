@@ -71,7 +71,7 @@ class OceanDataService {
         final startDate = endDate.subtract(Duration(days: days));
         
         final data = await mcpClient.getTemperatureTimeSeries(
-          region: region,
+          region: _toDutchRegion(region),
           startDate: _formatDate(startDate),
           endDate: _formatDate(endDate),
         );
@@ -119,7 +119,7 @@ class OceanDataService {
         final startDate = endDate.subtract(Duration(days: days));
         
         final data = await mcpClient.getSalinityTrends(
-          region: region,
+          region: _toDutchRegion(region),
           startDate: _formatDate(startDate),
           endDate: _formatDate(endDate),
         );
@@ -286,3 +286,24 @@ class OceanDataService {
   String _formatDate(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
+
+  // Helper to convert region names to Dutch for MCP API
+  String _toDutchRegion(String region) {
+    final regionLower = region.toLowerCase();
+    
+    if (regionLower.contains('north sea') || regionLower.contains('noordzee')) {
+      return 'Noordzee';
+    } else if (regionLower.contains('atlantic')) {
+      return 'Atlantische Oceaan';
+    } else if (regionLower.contains('pacific')) {
+      return 'Stille Oceaan';
+    } else if (regionLower.contains('mediterranean') || regionLower.contains('middellandse')) {
+      return 'Middellandse Zee';
+    } else if (regionLower.contains('baltic')) {
+      return 'Oostzee';
+    }
+    
+    // If already in Dutch or unknown, return as-is
+    return region;
+  }
+}

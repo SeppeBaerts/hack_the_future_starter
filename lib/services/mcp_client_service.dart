@@ -15,31 +15,34 @@ class McpClientService {
   final Logger _logger;
 
   /// Call an MCP tool and return the result
-  Future<Map<String, dynamic>> callTool({
+  Future<dynamic> callTool({
     required String toolName,
     required Map<String, dynamic> input,
   }) async {
     try {
       _logger.info('Calling MCP tool: $toolName with input: $input');
 
-      // Prepare the request body
-      final requestBody = {
-        'tool': toolName,
-        'input': input,
-      };
-
-      // Make HTTP POST request to the MCP server
-      final response = await http.post(
-        Uri.parse(serverUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $apiKey',
+      // Build URL with api_key and tool parameters as query params
+      final uri = Uri.parse(serverUrl).replace(
+        queryParameters: {
+          'api_key': apiKey,
+          'tool': toolName,
+          ...input.map((key, value) => MapEntry(key, value.toString())),
         },
-        body: jsonEncode(requestBody),
+      );
+
+      _logger.info('Making request to: $uri');
+
+      // Make HTTP GET request to the MCP server
+      final response = await http.get(
+        uri,
+        headers: {
+          'Accept': 'application/json',
+        },
       ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
-        final result = jsonDecode(response.body) as Map<String, dynamic>;
+        final result = jsonDecode(response.body);
         _logger.info('MCP tool $toolName returned successfully');
         return result;
       } else {
