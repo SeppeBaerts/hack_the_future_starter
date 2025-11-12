@@ -43,7 +43,6 @@ class ChatViewModel extends ChangeNotifier {
         _messages.add(ChatMessageModel(surfaceId: s.surfaceId));
         notifyListeners();
       },
-      },
       onTextResponse: (text) {
         _messages.add(ChatMessageModel(text: text));
         notifyListeners();
