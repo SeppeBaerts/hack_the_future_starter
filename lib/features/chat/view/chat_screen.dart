@@ -4,6 +4,7 @@ import 'package:hack_the_future_starter/l10n/app_localizations.dart';
 
 import '../models/chat_message.dart';
 import '../viewmodel/chat_view_model.dart';
+import '../widgets/agent_log_panel.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -16,6 +17,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final _textController = TextEditingController();
   final _scrollController = ScrollController();
   late final ChatViewModel _viewModel;
+  bool _showAgentLog = true;
 
   @override
   void initState() {
@@ -55,13 +57,73 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.appBarTitle)),
+      appBar: AppBar(
+        title: Text(l10n.appBarTitle),
+        actions: [
+          IconButton(
+            icon: Icon(_showAgentLog ? Icons.visibility_off : Icons.visibility),
+            tooltip: _showAgentLog ? 'Hide Agent Log' : 'Show Agent Log',
+            onPressed: () {
+              setState(() {
+                _showAgentLog = !_showAgentLog;
+              });
+            },
+          ),
+        ],
+      ),
       body: SafeArea(
         child: AnimatedBuilder(
           animation: _viewModel,
           builder: (context, _) {
             return Column(
               children: [
+                if (_showAgentLog)
+                  Container(
+                    height: 200,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      border: const Border(
+                        bottom: BorderSide(color: Colors.grey, width: 1),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.psychology, size: 20),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Agent Activity Log',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              const Spacer(),
+                              TextButton.icon(
+                                onPressed: () {
+                                  _viewModel.agentLogService.clear();
+                                },
+                                icon: const Icon(Icons.clear_all, size: 16),
+                                label: const Text('Clear'),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: AgentLogPanel(
+                            logService: _viewModel.agentLogService,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 Expanded(
                   child: ListView.builder(
                     controller: _scrollController,
@@ -78,9 +140,26 @@ class _ChatScreenState extends State<ChatScreen> {
                   valueListenable: _viewModel.isProcessing,
                   builder: (_, isProcessing, __) {
                     if (!isProcessing) return const SizedBox.shrink();
-                    return const Padding(
-                      padding: EdgeInsets.all(8.0),
-                      child: CircularProgressIndicator(),
+                    return Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const CircularProgressIndicator(),
+                          const SizedBox(width: 16),
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              _viewModel.abort();
+                            },
+                            icon: const Icon(Icons.stop),
+                            label: const Text('Stop'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
                     );
                   },
                 ),
