@@ -10,10 +10,18 @@ import 'firebase_options.dart';
 
 
 void main() async {
-  await Firebase.initializeApp(
-  options: DefaultFirebaseOptions.currentPlatform,);
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    // Firebase initialization failed - app will use mock data fallback
+    debugPrint('Firebase initialization failed: $e');
+    debugPrint('App will continue with mock data fallback');
+  }
+  
   configureGenUiLogging(level: Level.ALL);
   runApp(const MyApp());
 }
