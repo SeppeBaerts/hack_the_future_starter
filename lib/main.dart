@@ -5,9 +5,13 @@ import 'package:hack_the_future_starter/features/chat/view/chat_screen.dart';
 import 'package:hack_the_future_starter/l10n/app_localizations.dart';
 import 'package:logging/logging.dart';
 
+import 'package:firebase_ai/firebase_ai.dart';
 import 'firebase_options.dart';
 
+
 void main() async {
+  await Firebase.initializeApp(
+  options: DefaultFirebaseOptions.currentPlatform,);
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   configureGenUiLogging(level: Level.ALL);
