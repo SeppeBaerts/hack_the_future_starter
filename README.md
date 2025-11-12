@@ -9,6 +9,7 @@ Referentie: [Unlockd student briefing (PDF)](https://unlockd.be/wp-content/uploa
 ### MVP Features
 - ✅ Chat interface voor oceaan-vragen
 - ✅ Agent Activity Log (Perceive → Plan → Act → Reflect → Present)
+- ✅ **MCP Server Integratie** voor real-time oceaandata
 - ✅ Vier MCP-achtige tools voor oceaandata:
   - `getOceanTemperature`: Temperatuur tijdreeksen
   - `getOceanSalinity`: Zoutgehalte tijdreeksen
@@ -22,6 +23,20 @@ Referentie: [Unlockd student briefing (PDF)](https://unlockd.be/wp-content/uploa
 - ✅ Stop knop tijdens AI processing
 - ✅ Mock data fallback
 - ✅ Transparante agent logging
+
+### MCP Server Integratie (NEW!)
+
+De app kan nu **echte oceaandata** ophalen via een MCP (Model Context Protocol) server:
+
+- **Automatische fallback**: Als de MCP server niet beschikbaar is, gebruikt de app mock data
+- **Drie MCP tools**:
+  - `ocean_temperature_timeseries`: Oceaantemperatuur over tijd
+  - `ocean_salinity_trends`: Zoutgehalte trends
+  - `ocean_highest_waves`: Hoogste golf metingen
+- **Configureerbaar**: Eenvoudig schakelen tussen productie, custom, of mock data
+- **Robuust**: Automatische error handling en graceful degradation
+
+Zie [MCP_INTEGRATION.md](MCP_INTEGRATION.md) voor gedetailleerde documentatie.
 
 ### Voorbeeld Vragen
 
