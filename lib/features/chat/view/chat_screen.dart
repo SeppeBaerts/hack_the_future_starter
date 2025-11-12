@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:genui/genui.dart';
 import 'package:hack_the_future_starter/l10n/app_localizations.dart';
+import 'package:hack_the_future_starter/services/mcp_config.dart';
+import 'package:hack_the_future_starter/features/chat/services/genui_service.dart';
 
 import '../models/chat_message.dart';
 import '../viewmodel/chat_view_model.dart';
@@ -22,7 +24,15 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    _viewModel = ChatViewModel()..init();
+    
+    // Create MCP config - use production config to enable MCP integration
+    final mcpConfig = McpConfig.production();
+    
+    // Create GenUiService with MCP config
+    final genUiService = GenUiService(mcpConfig: mcpConfig);
+    
+    // Create ViewModel with the configured service
+    _viewModel = ChatViewModel(service: genUiService)..init();
   }
 
   @override

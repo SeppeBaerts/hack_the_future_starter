@@ -5,12 +5,29 @@ import '../widgets/ocean_widgets.dart';
 import '../models/agent_log_entry.dart';
 import 'agent_log_service.dart';
 import 'ocean_data_service.dart';
+import '../../../services/mcp_client_service.dart';
+import '../../../services/mcp_config.dart';
 
 class GenUiService {
-  GenUiService({OceanDataService? oceanDataService})
-      : _oceanDataService = oceanDataService ?? OceanDataService();
+  GenUiService({
+    OceanDataService? oceanDataService,
+    McpConfig? mcpConfig,
+  }) : _mcpConfig = mcpConfig ?? McpConfig.disabled() {
+    // Create MCP client if enabled and config is valid
+    McpClientService? mcpClient;
+    if (_mcpConfig.isValid) {
+      mcpClient = McpClientService(
+        serverUrl: _mcpConfig.serverUrl!,
+        apiKey: _mcpConfig.apiKey!,
+      );
+    }
 
-  final OceanDataService _oceanDataService;
+    // Create ocean data service with optional MCP client
+    _oceanDataService = oceanDataService ?? OceanDataService(mcpClient: mcpClient);
+  }
+
+  final McpConfig _mcpConfig;
+  late final OceanDataService _oceanDataService;
 
   Catalog createCatalog() {
     // Start with core catalog and add ocean-specific widgets
@@ -81,7 +98,7 @@ class _GetOceanTemperatureTool extends AiTool<Map<String, Object?>> {
       details: {'tool': 'getOceanTemperature', 'region': region, 'days': days},
     );
 
-    final data = _dataService.getTemperatureData(region, days: days);
+    final data = await _dataService.getTemperatureData(region, days: days);
     
     _logService?.logReflect(
       'Retrieved ${data.length} temperature data points for $region',
@@ -131,7 +148,7 @@ class _GetOceanSalinityTool extends AiTool<Map<String, Object?>> {
       details: {'tool': 'getOceanSalinity', 'region': region, 'days': days},
     );
 
-    final data = _dataService.getSalinityData(region, days: days);
+    final data = await _dataService.getSalinityData(region, days: days);
     
     _logService?.logReflect(
       'Retrieved ${data.length} salinity data points for $region',
@@ -176,7 +193,7 @@ class _GetWaveDataTool extends AiTool<Map<String, Object?>> {
       details: {'tool': 'getWaveData', 'count': count},
     );
 
-    final data = _dataService.getWaveData(count: count);
+    final data = await _dataService.getWaveData(count: count);
     
     _logService?.logReflect(
       'Retrieved ${data.length} wave measurements from various locations',
