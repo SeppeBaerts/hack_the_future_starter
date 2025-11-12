@@ -30,14 +30,19 @@ class ChatViewModel extends ChangeNotifier {
   void init() {
     _catalog = _service.createCatalog();
     _manager = GenUiManager(catalog: _catalog);
-    final generator = _service.createContentGenerator(catalog: _catalog);
+    final generator = _service.createContentGenerator(
+      catalog: _catalog,
+      logService: agentLogService,
+    );
 
     _conversation = GenUiConversation(
       genUiManager: _manager,
       contentGenerator: generator,
       onSurfaceAdded: (s) {
+        agentLogService.logPresent('Created UI surface with widgets');
         _messages.add(ChatMessageModel(surfaceId: s.surfaceId));
         notifyListeners();
+      },
       },
       onTextResponse: (text) {
         _messages.add(ChatMessageModel(text: text));
@@ -59,8 +64,8 @@ class ChatViewModel extends ChangeNotifier {
   Future<void> send(String text) async {
     if (text.trim().isEmpty) return;
     
-    // Clear previous logs for new query
-    agentLogService.clear();
+    // Start a new conversation context (but don't clear old logs)
+    agentLogService.startNewConversation();
     
     // Log the user's question
     agentLogService.logPerceive('User asked: "$text"');
