@@ -14,14 +14,24 @@ Referentie: [Unlockd student briefing (PDF)](https://unlockd.be/wp-content/uploa
   - `getOceanSalinity`: Zoutgehalte tijdreeksen
   - `getWaveData`: Golfmetingen
   - `getCurrentConditions`: Huidige oceaancondities
-- ✅ Vier custom ocean widgets:
+- ✅ Zes custom ocean widgets:
   - OceanTemperatureCard
   - WaveInfoCard
   - SalinityCard
   - DataTrendCard
+  - OceanGaugeCard (nieuw!)
+  - OceanHeatmapCard (nieuw!)
 - ✅ Stop knop tijdens AI processing
 - ✅ Mock data fallback
 - ✅ Transparante agent logging
+
+### Stretch Goals (NIEUW!)
+- ✅ **Query History**: Laatste 5 vragen met snelle herhaling
+- ✅ **Dark/Light Mode**: Toggle tussen donker en licht thema
+- ✅ **Favorites**: Markeer interessante vragen als favoriet
+- ✅ **Share Functionaliteit**: Exporteer data naar JSON/CSV
+- ✅ **Enhanced UI States**: Betere loading, error en empty states
+- ✅ **Smooth Transitions**: Animaties tussen schermen en componenten
 
 ### Voorbeeld Vragen
 

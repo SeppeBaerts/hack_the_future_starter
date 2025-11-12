@@ -112,6 +112,92 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  void _exportHistory() {
+    final history = _viewModel.queryHistoryService.history;
+    if (history.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No query history to export'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    final csvData = history.map((item) => {
+      'query': item.query,
+      'timestamp': item.timestamp.toIso8601String(),
+    }).toList();
+
+    _viewModel.shareService.showShareDialog(
+      context,
+      jsonData: {'queries': csvData},
+      csvData: csvData,
+    );
+  }
+
+  void _exportAgentLogs() {
+    final logs = _viewModel.agentLogService.entries;
+    if (logs.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No agent logs to export'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    final csvData = logs.map((entry) => {
+      'step': entry.stepName,
+      'message': entry.message,
+      'timestamp': entry.timestamp.toIso8601String(),
+    }).toList();
+
+    _viewModel.shareService.showShareDialog(
+      context,
+      jsonData: {'logs': csvData},
+      csvData: csvData,
+    );
+  }
+
+  void _clearAll() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear All Data'),
+        content: const Text(
+          'This will clear query history, favorites, and agent logs. '
+          'Chat messages will remain. Continue?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              _viewModel.queryHistoryService.clear();
+              _viewModel.favoritesService.clear();
+              _viewModel.agentLogService.clear();
+              Navigator.of(context).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('All data cleared'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('Clear'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -159,6 +245,56 @@ class _ChatScreenState extends State<ChatScreen> {
             icon: const Icon(Icons.favorite),
             tooltip: 'View Favorites',
             onPressed: _showFavoritesDrawer,
+          ),
+          // More options menu
+          PopupMenuButton<String>(
+            tooltip: 'More options',
+            icon: const Icon(Icons.more_vert),
+            onSelected: (value) {
+              switch (value) {
+                case 'export_history':
+                  _exportHistory();
+                  break;
+                case 'export_logs':
+                  _exportAgentLogs();
+                  break;
+                case 'clear_all':
+                  _clearAll();
+                  break;
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'export_history',
+                child: Row(
+                  children: [
+                    Icon(Icons.download),
+                    SizedBox(width: 8),
+                    Text('Export Query History'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'export_logs',
+                child: Row(
+                  children: [
+                    Icon(Icons.file_download),
+                    SizedBox(width: 8),
+                    Text('Export Agent Logs'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'clear_all',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_sweep),
+                    SizedBox(width: 8),
+                    Text('Clear All Data'),
+                  ],
+                ),
+              ),
+            ],
           ),
           // Agent log toggle
           IconButton(

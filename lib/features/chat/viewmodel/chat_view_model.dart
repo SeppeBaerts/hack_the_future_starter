@@ -6,6 +6,7 @@ import 'package:hack_the_future_starter/features/chat/services/genui_service.dar
 import 'package:hack_the_future_starter/features/chat/services/agent_log_service.dart';
 import 'package:hack_the_future_starter/features/chat/services/query_history_service.dart';
 import 'package:hack_the_future_starter/features/chat/services/favorites_service.dart';
+import 'package:hack_the_future_starter/features/chat/services/share_service.dart';
 
 class ChatViewModel extends ChangeNotifier {
   ChatViewModel({
@@ -13,15 +14,18 @@ class ChatViewModel extends ChangeNotifier {
     AgentLogService? agentLogService,
     QueryHistoryService? queryHistoryService,
     FavoritesService? favoritesService,
+    ShareService? shareService,
   })  : _service = service ?? GenUiService(),
         agentLogService = agentLogService ?? AgentLogService(),
         queryHistoryService = queryHistoryService ?? QueryHistoryService(),
-        favoritesService = favoritesService ?? FavoritesService();
+        favoritesService = favoritesService ?? FavoritesService(),
+        shareService = shareService ?? ShareService();
 
   final GenUiService _service;
   final AgentLogService agentLogService;
   final QueryHistoryService queryHistoryService;
   final FavoritesService favoritesService;
+  final ShareService shareService;
 
   late final Catalog _catalog;
   late final GenUiManager _manager;
