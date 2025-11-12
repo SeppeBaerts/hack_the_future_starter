@@ -1,15 +1,126 @@
 import 'package:genui/genui.dart';
 import 'package:genui_firebase_ai/genui_firebase_ai.dart';
+import '../widgets/ocean_widgets.dart';
+import 'ocean_data_service.dart';
 
 class GenUiService {
-  Catalog createCatalog() => CoreCatalogItems.asCatalog();
+  GenUiService({OceanDataService? oceanDataService})
+      : _oceanDataService = oceanDataService ?? OceanDataService();
+
+  final OceanDataService _oceanDataService;
+
+  Catalog createCatalog() {
+    // Start with core catalog and add ocean-specific widgets
+    return CoreCatalogItems.asCatalog().copyWith([
+      oceanTemperatureCardItem,
+      waveInfoCardItem,
+      salinityCardItem,
+      dataTrendCardItem,
+    ]);
+  }
 
   FirebaseAiContentGenerator createContentGenerator({Catalog? catalog}) {
     final cat = catalog ?? createCatalog();
     return FirebaseAiContentGenerator(
       catalog: cat,
       systemInstruction: _oceanExplorerPrompt,
+      additionalTools: _createOceanTools(),
     );
+  }
+
+  List<DynamicAiTool> _createOceanTools() {
+    return [
+      DynamicAiTool(
+        name: 'getOceanTemperature',
+        description:
+            'Retrieves ocean temperature data for a specific region over a time period. '
+            'Returns a list of data points with timestamps and temperature values.',
+        parameters: {
+          'region': PropertySchema<String>(
+            description: 'Name of the ocean region (e.g., "North Sea", "Atlantic Ocean")',
+            defaultValue: 'North Sea',
+          ),
+          'days': PropertySchema<int>(
+            description: 'Number of days of historical data to retrieve (default: 30)',
+            defaultValue: 30,
+          ),
+        },
+        handler: (args) async {
+          final region = args['region'] as String? ?? 'North Sea';
+          final days = args['days'] as int? ?? 30;
+          
+          final data = _oceanDataService.getTemperatureData(region, days: days);
+          return {
+            'region': region,
+            'data': data.map((d) => d.toJson()).toList(),
+            'unit': '°C',
+          };
+        },
+      ),
+      DynamicAiTool(
+        name: 'getOceanSalinity',
+        description:
+            'Retrieves ocean salinity data for a specific region over a time period. '
+            'Returns a list of data points with timestamps and salinity values in PSU.',
+        parameters: {
+          'region': PropertySchema<String>(
+            description: 'Name of the ocean region',
+            defaultValue: 'North Sea',
+          ),
+          'days': PropertySchema<int>(
+            description: 'Number of days of historical data to retrieve (default: 30)',
+            defaultValue: 30,
+          ),
+        },
+        handler: (args) async {
+          final region = args['region'] as String? ?? 'North Sea';
+          final days = args['days'] as int? ?? 30;
+          
+          final data = _oceanDataService.getSalinityData(region, days: days);
+          return {
+            'region': region,
+            'data': data.map((d) => d.toJson()).toList(),
+            'unit': 'PSU',
+          };
+        },
+      ),
+      DynamicAiTool(
+        name: 'getWaveData',
+        description:
+            'Retrieves wave measurement data from various ocean regions. '
+            'Returns wave height, period, and direction for multiple locations.',
+        parameters: {
+          'count': PropertySchema<int>(
+            description: 'Number of wave measurements to retrieve (default: 10)',
+            defaultValue: 10,
+          ),
+        },
+        handler: (args) async {
+          final count = args['count'] as int? ?? 10;
+          
+          final data = _oceanDataService.getWaveData(count: count);
+          return {
+            'measurements': data.map((w) => w.toJson()).toList(),
+          };
+        },
+      ),
+      DynamicAiTool(
+        name: 'getCurrentConditions',
+        description:
+            'Retrieves current ocean conditions for a specific region including '
+            'temperature, salinity, wave height, and wind speed.',
+        parameters: {
+          'region': PropertySchema<String>(
+            description: 'Name of the ocean region',
+            defaultValue: 'North Sea',
+          ),
+        },
+        handler: (args) async {
+          final region = args['region'] as String? ?? 'North Sea';
+          return _oceanDataService.getCurrentConditions(region);
+        },
+      ),
+    ];
   }
 }
 
@@ -20,7 +131,7 @@ You are an intelligent ocean explorer assistant that helps users understand ocea
 
 ## Agent Loop (Perceive → Plan → Act → Reflect → Present)
 
-Your workflow follows this pattern:
+Your workflow MUST follow this pattern, and you should think through each step:
 
 1. **Perceive**: Understand the user's question about the ocean
    - What information do they need?
@@ -28,20 +139,33 @@ Your workflow follows this pattern:
    - What time period? (historical, current, forecast)
 
 2. **Plan**: Determine how to visualize and present the information
-   - Decide on the best visualization format (cards, text, structured layouts)
+   - Decide which ocean data tools to call
+   - Choose the best visualization format (ocean-specific cards, trends, etc.)
    - Consider what UI components best represent the information
 
-3. **Act**: Prepare to retrieve or present ocean data
-   - When MCP tools become available, you'll call them to get real data
-   - For now, you can provide helpful information and structure for data visualization
+3. **Act**: Call the appropriate tools to retrieve ocean data
+   - Use `getOceanTemperature` for temperature data
+   - Use `getOceanSalinity` for salinity data
+   - Use `getWaveData` for wave measurements
+   - Use `getCurrentConditions` for current conditions
 
-4. **Reflect**: Determine the best way to present the information
+4. **Reflect**: Analyze the retrieved data
    - What insights can be shared?
-   - Which UI components best represent this information?
+   - What are the key trends or values?
+   - Which custom UI components best represent this information?
 
 5. **Present**: Generate JSON for GenUI to visually display the information
-   - Use UI components instead of plain text
-   - Create informative visualizations
+   - Use ocean-specific widgets for better visualization
+   - Create informative visualizations with the actual data
+
+## Available Ocean Data Tools
+
+You have access to these tools to retrieve real ocean data:
+
+1. **getOceanTemperature(region, days)**: Get temperature time series data
+2. **getOceanSalinity(region, days)**: Get salinity time series data
+3. **getWaveData(count)**: Get wave measurements from multiple locations
+4. **getCurrentConditions(region)**: Get current conditions for a region
 
 ## Common User Questions
 
@@ -50,7 +174,23 @@ Users may ask questions like:
 - "What is the ocean temperature in the North Sea over the past month?"
 - "Show me salinity trends in the Atlantic Ocean"
 - "Where were the highest waves measured?"
-- "What's the marine forecast for coordinates [latitude, longitude]?"
+- "What are the current conditions in the Mediterranean?"
+
+## Available Custom Ocean Widgets
+
+You have access to these special ocean visualization components:
+
+1. **OceanTemperatureCard**: Displays temperature with a thermometer icon
+   - Properties: region (string), temperature (number), unit (string, default: "°C")
+   
+2. **WaveInfoCard**: Shows wave measurements with metrics
+   - Properties: region (string), height (number), period (number), direction (string)
+   
+3. **SalinityCard**: Displays salinity in PSU with water drop icon
+   - Properties: region (string), salinity (number)
+   
+4. **DataTrendCard**: Shows min/avg/max statistics for a data series
+   - Properties: title (string), dataPoints (array of objects with 'value' and 'timestamp'), unit (string), color (optional)
 
 ## Controlling the UI
 
@@ -68,32 +208,18 @@ If you are displaying more than one component, you should use a `Column` widget 
 
 Always prefer to communicate using UI elements rather than text. Only respond with text if you need to provide a short explanation of how you've updated the UI.
 
-- **Data visualization**: Use appropriate widgets to display information:
-  - Use `Text` widgets for summaries and key information
-  - Use `Card` widgets to organize information about specific regions or topics
-  - Use `Column` and `Row` to create structured layouts
+- **Data visualization**: Use the custom ocean widgets for better visualization:
+  - Use `OceanTemperatureCard` for temperature displays
+  - Use `WaveInfoCard` for wave information
+  - Use `SalinityCard` for salinity data
+  - Use `DataTrendCard` for trend analysis with min/avg/max
+  - Use `Column` to stack multiple cards vertically
 
-- **Input handling**: When users need to specify parameters (dates, regions, coordinates), use appropriate input widgets:
-  - Use `DatePicker` for date selection
-  - Use `TextField` for text input like coordinates or region names
-  - Use `Slider` for numeric values (must bind to a path that contains a number, not a string)
-  - Always provide clear labels and instructions
-
-- **State management**: When asking for user input, bind input values to the data model using paths. For example:
-  - `/query/start_date` for start date
-  - `/query/end_date` for end date
-  - `/query/region` for region name
-  - **IMPORTANT**: When using `Slider` widget, ensure the bound path contains a numeric value (not a string). If initializing a Slider, use a numeric literal value or initialize the path with a number first.
-
-## Future MCP Integration
-
-When MCP tools become available, you'll be able to:
-- Retrieve real ocean temperature data
-- Get marine forecasts
-- Access historical ocean measurements
-- Query salinity trends and wave data
-
-For now, focus on creating helpful UI structures and explaining how data would be displayed once MCP tools are connected.
+- **Workflow**: Always follow this pattern:
+  1. Call the appropriate data tool (e.g., getOceanTemperature)
+  2. Analyze the returned data
+  3. Create UI components using the data
+  4. Use ocean-specific widgets when appropriate
 
 When updating or showing UIs, **ALWAYS** use the surfaceUpdate tool to supply them. Prefer to collect and show information by creating a UI for it.
 

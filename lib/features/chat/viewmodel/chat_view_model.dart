@@ -1,12 +1,19 @@
 import 'package:flutter/foundation.dart';
 import 'package:genui/genui.dart';
 import 'package:hack_the_future_starter/features/chat/models/chat_message.dart';
+import 'package:hack_the_future_starter/features/chat/models/agent_log_entry.dart';
 import 'package:hack_the_future_starter/features/chat/services/genui_service.dart';
+import 'package:hack_the_future_starter/features/chat/services/agent_log_service.dart';
 
 class ChatViewModel extends ChangeNotifier {
-  ChatViewModel({GenUiService? service}) : _service = service ?? GenUiService();
+  ChatViewModel({
+    GenUiService? service,
+    AgentLogService? agentLogService,
+  })  : _service = service ?? GenUiService(),
+        agentLogService = agentLogService ?? AgentLogService();
 
   final GenUiService _service;
+  final AgentLogService agentLogService;
 
   late final Catalog _catalog;
   late final GenUiManager _manager;
@@ -37,6 +44,10 @@ class ChatViewModel extends ChangeNotifier {
         notifyListeners();
       },
       onError: (err) {
+        agentLogService.addEntry(
+          AgentStep.act,
+          'Error: ${err.error}',
+        );
         _messages.add(
           ChatMessageModel(text: err.error.toString(), isError: true),
         );
@@ -47,9 +58,26 @@ class ChatViewModel extends ChangeNotifier {
 
   Future<void> send(String text) async {
     if (text.trim().isEmpty) return;
+    
+    // Clear previous logs for new query
+    agentLogService.clear();
+    
+    // Log the user's question
+    agentLogService.logPerceive('User asked: "$text"');
+    
     _messages.add(ChatMessageModel(text: text, isUser: true));
     notifyListeners();
+    
     await _conversation.sendRequest(UserMessage([TextPart(text)]));
+  }
+
+  void abort() {
+    // Note: GenUI doesn't directly expose abort, but we can track this
+    agentLogService.addEntry(
+      AgentStep.act,
+      'User requested to stop the agent',
+    );
+    // The conversation will naturally stop after current processing
   }
 
   void disposeConversation() {
